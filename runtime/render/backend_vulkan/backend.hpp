@@ -5,7 +5,8 @@
 
 #include "renderbackend.hpp"
 
-#include "backend_vulkan/valloc.hpp"
+#include "vk_mem_alloc.h"
+
 #include "backend_vulkan/vk_device.hpp"
 #include "backend_vulkan/synchronization/vk_semaphore.hpp"
 #include "backend_vulkan/synchronization/vk_fence.hpp"
@@ -46,10 +47,8 @@ public:
     ) override;
 
     void UpdateBuffer(
-        RBuffer *buffer,
-        void *data,
-        size_t start_offset,
-        size_t size
+        RBuffer *buffer, void *data,
+        size_t start_offset, size_t size
     ) override;
 
     RTexture *CreateTexture2D(
@@ -59,15 +58,13 @@ public:
     ) override;
 
     RRenderPass *CreateRenderPass(
-        const RRenderPassAttachment *color_attachments,
-        int num_color_attachments,
+        const RRenderPassAttachment *color_attachments, int num_color_attachments,
         const RRenderPassAttachment *depth
     ) override;
 
     RFramebuffer *CreateFramebuffer(
         RRenderPass *,
-        RTexture **images,
-        int num_images,
+        RTexture **images, int num_images,
         RTexture *depth_stencil
     ) override;
 
@@ -83,10 +80,7 @@ public:
         int num_descriptor_set_layouts
     ) override;
 
-    RShader *CreateShader(
-        const char *filename,
-        RShaderPipelineBind
-    ) override;
+    RShader *CreateShader(const char *filename, RShaderPipelineBind) override;
 
     RCommandPool *CreateCommandPool() override;
 
@@ -109,7 +103,7 @@ private:
     std::unique_ptr<VulkanDevice> vulkan_device_;
     std::unique_ptr<VulkanSwapchain> vulkan_swapchain_;
 
-    std::unique_ptr<VAlloc> valloc_;
+    VmaAllocator vma_allocator_;
 
     std::unique_ptr<VulkanFence> in_flight_fence_;
     std::unique_ptr<VulkanSemaphore> image_available_semaphore_;

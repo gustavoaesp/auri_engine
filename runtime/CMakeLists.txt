@@ -24,9 +24,15 @@ if (BUILD_VULKAN)
         render/backend_vulkan/vk_device.cpp
         render/backend_vulkan/vk_swapchain.cpp
 
-        #VMA
+        #vma
+        third_party/VulkanMemoryAllocator/VmaUsage.cpp
     )
 
+    set (RENDER_BACKEND_INCLUDE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/VulkanMemoryAllocator
+    )
+
+    #add_compile_definitions(VMA_IMPLEMENTATION)
     add_compile_definitions(VULKAN_ENABLED)
 endif()
 
@@ -37,3 +43,4 @@ target_link_libraries(pengine vulkan)
 target_link_libraries(pengine glfw)
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/render)
+target_include_directories(pengine PUBLIC ${RENDER_BACKEND_INCLUDE_DIRS})

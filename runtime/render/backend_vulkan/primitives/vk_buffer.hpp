@@ -6,22 +6,23 @@
 #include "render/primitives/buffer.hpp"
 #include "backend_vulkan/valloc.hpp"
 
+#include "vk_mem_alloc.h"
+
 namespace eng
 {
 
 struct VulkanBuffer : public RBuffer
 {
     VulkanBuffer(
-        VkDevice vk_device,
-        VAlloc *vk_alloc,
+        VmaAllocator alloc,
         RBufferUsage usage,
         size_t size
     );
     ~VulkanBuffer() override;
 
-    VkDeviceMemory vk_dev_mem;
+    VmaAllocator vk_allocator_ref;
+    VmaAllocation vk_allocation;
     VkBuffer vk_buffer;
-    VkDevice vk_device_ref;
 };
 
 }

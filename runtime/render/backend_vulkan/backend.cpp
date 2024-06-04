@@ -42,9 +42,13 @@ VulkanRenderBackend::VulkanRenderBackend(
     render_finished_semaphore_ = std::make_unique<VulkanSemaphore>(vulkan_device_->get());
     in_flight_fence_ = std::make_unique<VulkanFence>(vulkan_device_->get(), true);
 
-    valloc_ = std::make_unique<VAlloc>(
-        vulkan_device_.get(),
-        vulkan_device_->GetMemoryProperties()
+    VmaAllocatorCreateInfo vma_info{};
+    vma_info.instance = vulkan_instance_->get();
+    vma_info.device = vulkan_device_->get();
+    vma_info.physicalDevice = vulkan_device_->getPhysical();
+    vmaCreateAllocator(
+        &vma_info,
+        &vma_allocator_
     );
 
     presentation_render_pass_ = std::make_unique<VulkanRenderPass>(
@@ -138,6 +142,12 @@ VulkanRenderBackend::VulkanRenderBackend(
 
 VulkanRenderBackend::~VulkanRenderBackend()
 {
+    // TODO these are required before freeing the allocator,
+    // Maybe refactor to let RAII take care of everything
+    presentation_framebuffers_.clear();
+    presentation_square_.reset();
+
+    vmaDestroyAllocator(vma_allocator_);
 }
 
 void VulkanRenderBackend::BeginFrame()
@@ -228,17 +238,16 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
 RBuffer *VulkanRenderBackend::CreateBuffer(RBufferUsage usage, size_t size, void *contents)
 {
     VulkanBuffer *new_buffer = new VulkanBuffer(
-        vulkan_device_->get(),
-        valloc_.get(),
+        vma_allocator_,
         usage,
         size
     );
 
     if (contents) {
         void *mapped;
-        vkMapMemory(vulkan_device_->get(), new_buffer->vk_dev_mem, 0, size, 0, &mapped);
+        vmaMapMemory(vma_allocator_, new_buffer->vk_allocation, &mapped);
         memcpy(mapped, contents, size);
-        vkUnmapMemory(vulkan_device_->get(), new_buffer->vk_dev_mem);
+        vmaUnmapMemory(vma_allocator_, new_buffer->vk_allocation);
     }
 
     return new_buffer;
@@ -250,9 +259,11 @@ void VulkanRenderBackend::UpdateBuffer(RBuffer *buffer, void *data, size_t start
 
 RTexture *VulkanRenderBackend::CreateTexture2D(uint32_t width, uint32_t height, EFormat pixel_fmt, void *contents)
 {
-    VulkanTexture *texture = new VulkanTexture(vulkan_device_->get(), pixel_fmt, width, height);
+    VulkanTexture *texture = new VulkanTexture(vulkan_device_->get(), vma_allocator_, pixel_fmt, width, height);
 
     VkImageCreateInfo imageInfo{};
+    VmaAllocationCreateInfo vma_image_alloc_info{};
+
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
@@ -277,13 +288,17 @@ RTexture *VulkanRenderBackend::CreateTexture2D(uint32_t width, uint32_t height, 
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;
 
-    if (vkCreateImage(vulkan_device_->get(), &imageInfo, nullptr, &texture->vk_image) != VK_SUCCESS) {
-        // TODO error
-    }
-
-    valloc_->AllocateTextureImage(texture->vk_image, &texture->vk_dev_memory, EMemoryLocation::kMemoryLocationDevice);
-
-    vkBindImageMemory(vulkan_device_->get(), texture->vk_image, texture->vk_dev_memory, 0);
+    //vma_image_alloc_info.memoryTypeBits = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+    vma_image_alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    //vma_image_alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    vmaCreateImage(
+        vma_allocator_,
+        &imageInfo,
+        &vma_image_alloc_info,
+        &texture->vk_image,
+        &texture->vk_allocation,
+        nullptr
+    );
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
