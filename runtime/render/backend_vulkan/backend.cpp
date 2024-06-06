@@ -255,6 +255,11 @@ RBuffer *VulkanRenderBackend::CreateBuffer(RBufferUsage usage, size_t size, void
 
 void VulkanRenderBackend::UpdateBuffer(RBuffer *buffer, void *data, size_t start_offset, size_t size)
 {
+    VulkanBuffer *vk_buffer = static_cast<VulkanBuffer*>(buffer);
+    void *mapped;
+    vmaMapMemory(vma_allocator_, vk_buffer->vk_allocation, &mapped);
+    memcpy(mapped, data, size);
+    vmaUnmapMemory(vma_allocator_, vk_buffer->vk_allocation);
 }
 
 RTexture *VulkanRenderBackend::CreateTexture2D(uint32_t width, uint32_t height, EFormat pixel_fmt, void *contents)
@@ -393,14 +398,26 @@ void VulkanRenderBackend::SubmitBuffers(RCommandBuffer **buffers, uint32_t num_b
     );
 }
 
-RDescriptorLayout *VulkanRenderBackend::CreateDescriptorLayout(const RDescriptorLayoutBinding *, uint32_t num_bindings)
+RDescriptorLayout *VulkanRenderBackend::CreateDescriptorLayout(
+    const RDescriptorLayoutBinding *bindings,
+    uint32_t num_bindings)
 {
-    return nullptr;
+    return new VulkanDescriptorSetLayout(
+        vulkan_device_->get(),
+        bindings,
+        num_bindings
+    );
 }
 
-RDescriptorPool *VulkanRenderBackend::CreateDescriptorPool(uint32_t max_sets, RDescriptorLayoutBindingType)
+RDescriptorPool *VulkanRenderBackend::CreateDescriptorPool(
+    uint32_t max_sets,
+    RDescriptorLayoutBindingType binding_type)
 {
-    return nullptr;
+    return new VulkanDescriptorPool(
+        vulkan_device_->get(),
+        max_sets,
+        binding_type
+    );
 }
 
 void VulkanRenderBackend::Finalize()

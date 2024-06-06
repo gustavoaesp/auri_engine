@@ -36,8 +36,14 @@ if (BUILD_VULKAN)
     add_compile_definitions(VULKAN_ENABLED)
 endif()
 
+set(RENDER_SRC
+    render/transform/matrix.cpp
+    render/transform/vector.cpp
+)
+
 add_library(pengine
     ${RENDER_BACKEND_SRC}
+    ${RENDER_SRC}
 )
 target_link_libraries(pengine vulkan)
 target_link_libraries(pengine glfw)

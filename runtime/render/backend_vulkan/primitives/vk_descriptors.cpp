@@ -1,3 +1,4 @@
+#include "backend_vulkan/primitives/vk_buffer.hpp"
 #include "backend_vulkan/primitives/vk_descriptors.hpp"
 #include "backend_vulkan/primitives/vk_sampler.hpp"
 #include "backend_vulkan/primitives/vk_texture.hpp"
@@ -128,6 +129,14 @@ VkDescriptorSet VulkanDescriptorPool::Allocate(VulkanDescriptorSetLayout *desc_l
     return vk_descriptor_set;
 }
 
+RDescriptorSet *VulkanDescriptorPool::AllocateSet(RDescriptorLayout* layout)
+{
+    return new VulkanDescriptorSet(
+        vk_device_ref,
+        Allocate(static_cast<VulkanDescriptorSetLayout*>(layout))
+    );
+}
+
 /* ======================================================================
  *
  *   DESCRIPTOR SET
@@ -147,11 +156,29 @@ void VulkanDescriptorSet::BindBuffers(
     const RBufferBinding* bindings,
     uint32_t count)
 {
-    /*std::array<VkDescriptorBufferInfo, kMaxDescriptorBindings> bufferInfos{};
+    std::array<VkDescriptorBufferInfo, kMaxDescriptorBindings> bufferInfos{};
+    std::array<VkWriteDescriptorSet, kMaxDescriptorBindings> descriptor_writes{};
 
     for (int i = 0; i < count; i++) {
-        bufferInfos[i].buffer = bindings[i].buffer
-    }*/
+        VulkanBuffer *vk_buffer = static_cast<VulkanBuffer*>(bindings[i].buffer);
+        bufferInfos[i].buffer = vk_buffer->vk_buffer;
+        bufferInfos[i].offset = bindings[i].start_offset;
+        bufferInfos[i].range = bindings[i].size;
+
+        descriptor_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[i].pBufferInfo = &bufferInfos[i];
+        descriptor_writes[i].dstSet = vk_descriptor_set;
+        descriptor_writes[i].dstBinding = start_index + i;
+        descriptor_writes[i].descriptorCount = 1;
+    }
+
+    vkUpdateDescriptorSets(
+        vk_device_ref,
+        count,
+        descriptor_writes.data(),
+        0, nullptr
+    );
 }
 
 void VulkanDescriptorSet::BindTextures(

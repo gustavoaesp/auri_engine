@@ -55,15 +55,6 @@ protected:
     RDescriptorLayout() {}
 };
 
-class RDescriptorPool
-{
-public:
-    virtual ~RDescriptorPool() {}
-
-protected:
-    RDescriptorPool() {}
-};
-
 class RDescriptorSet
 {
 public:
@@ -84,6 +75,18 @@ public:
 protected:
     RDescriptorSet() {}
 };
+
+class RDescriptorPool
+{
+public:
+    virtual ~RDescriptorPool() {}
+
+    virtual RDescriptorSet* AllocateSet(RDescriptorLayout*) = 0;
+
+protected:
+    RDescriptorPool() {}
+};
+
 
 }
 

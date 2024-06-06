@@ -33,6 +33,8 @@ struct VulkanDescriptorPool : public RDescriptorPool
 
     VkDescriptorSet Allocate(VulkanDescriptorSetLayout*);
 
+    RDescriptorSet *AllocateSet(RDescriptorLayout *) override;
+
     VkDescriptorPool vk_descriptor_pool;
     VkDevice vk_device_ref;
 };
