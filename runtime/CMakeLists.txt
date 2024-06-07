@@ -23,9 +23,14 @@ if (BUILD_VULKAN)
         render/backend_vulkan/vertex_input_desc.cpp
         render/backend_vulkan/vk_device.cpp
         render/backend_vulkan/vk_swapchain.cpp
+        render/backend_vulkan/transfer_buffers.cpp
 
         #vma
         third_party/VulkanMemoryAllocator/VmaUsage.cpp
+
+        #imgui
+        third_party/imgui/backends/imgui_impl_glfw.cpp
+        third_party/imgui/backends/imgui_impl_vulkan.cpp
     )
 
     set (RENDER_BACKEND_INCLUDE_DIRS
@@ -39,6 +44,19 @@ endif()
 set(RENDER_SRC
     render/transform/matrix.cpp
     render/transform/vector.cpp
+    #render/texture_file.cpp
+
+    # ImGui
+    third_party/imgui/imgui.cpp
+    third_party/imgui/imgui_demo.cpp
+    third_party/imgui/imgui_draw.cpp
+    third_party/imgui/imgui_tables.cpp
+    third_party/imgui/imgui_widgets.cpp
+)
+
+set(RENDER_INCLUDES
+    third_party/imgui
+    third_party/imgui/backends
 )
 
 add_library(pengine
@@ -50,3 +68,4 @@ target_link_libraries(pengine glfw)
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/render)
 target_include_directories(pengine PUBLIC ${RENDER_BACKEND_INCLUDE_DIRS})
+target_include_directories(pengine PUBLIC ${RENDER_INCLUDES})

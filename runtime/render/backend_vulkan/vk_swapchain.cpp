@@ -10,7 +10,8 @@ VulkanSwapchain::VulkanSwapchain(
     VulkanInstance& instance, VulkanDevice* device,
     GLFWwindow* window, VkSurfaceKHR windowSurface
 ):
-    instance_(&instance), windowSurface_(windowSurface), device_(device)
+    instance_(&instance), windowSurface_(windowSurface), device_(device),
+    window_(window)
 {
     int winWidth, winHeight;
     glfwGetFramebufferSize(window, &winWidth, &winHeight);

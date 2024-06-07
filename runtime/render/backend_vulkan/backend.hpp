@@ -10,6 +10,8 @@
 #include "backend_vulkan/vk_device.hpp"
 #include "backend_vulkan/synchronization/vk_semaphore.hpp"
 #include "backend_vulkan/synchronization/vk_fence.hpp"
+#include "backend_vulkan/transfer_buffers.hpp"
+#include "render/texture_file.hpp"
 
 namespace eng
 {
@@ -33,7 +35,9 @@ public:
         std::unique_ptr<VulkanInstance> &&vulkan_instance,
         GLFWwindow*, VkSurfaceKHR
     );
-    virtual ~VulkanRenderBackend();
+    ~VulkanRenderBackend() override;
+
+    virtual void InitializeGUI() override;
 
     void BeginFrame() override;
     void BeginRender() override;
@@ -51,10 +55,12 @@ public:
         size_t start_offset, size_t size
     ) override;
 
+    RTexture *CreateImage2D(
+        uint32_t width, uint32_t height, EFormat pixel_fmt
+    ) override;
+
     RTexture *CreateTexture2D(
-        uint32_t width, uint32_t height,
-        EFormat pixel_fmt,
-        void *contents
+        const RTextureFile *
     ) override;
 
     RRenderPass *CreateRenderPass(
@@ -96,6 +102,11 @@ public:
         RDescriptorLayoutBindingType
     ) override;
 
+    RSampler *CreateSampler(
+        RSamplerFilterMode,
+        RSamplerAddressMode
+    ) override;
+
     void Finalize() override;
 
 private:
@@ -125,9 +136,14 @@ private:
     std::unique_ptr<VulkanBuffer> presentation_square_;
     std::unique_ptr<VulkanSampler> presentation_sampler_;
 
+    std::unique_ptr<VulkanTransferBuffers> transfer_buffers_;
+
     VkSurfaceKHR win_surface_;
 
     uint32_t image_index_;
+
+    bool gui_initialized_;
+    VkDescriptorPool im_gui_descriptor_pool_;
 };
 
 }

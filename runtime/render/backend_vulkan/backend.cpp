@@ -10,6 +10,10 @@
 #include "backend_vulkan/vk_swapchain.hpp"
 #include "backend.hpp"
 
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
+
 #include <string.h>
 
 namespace eng
@@ -27,7 +31,8 @@ static Vertex screen_square[6] = {
 VulkanRenderBackend::VulkanRenderBackend(
     std::unique_ptr<VulkanInstance> &&vulkan_instance, GLFWwindow* window, VkSurfaceKHR win_surface
 ):
-    vulkan_instance_(std::move(vulkan_instance)), win_surface_(win_surface)
+    vulkan_instance_(std::move(vulkan_instance)), win_surface_(win_surface),
+    gui_initialized_(false)
 {
     vulkan_device_ = std::make_unique<VulkanDevice>(
         *vulkan_instance_,
@@ -138,6 +143,14 @@ VulkanRenderBackend::VulkanRenderBackend(
     presentation_cmd_buffer_ = std::unique_ptr<VulkanCommandBuffer>(
         static_cast<VulkanCommandBuffer*>(presentation_cmd_pool_->CreateCommandBuffer(true))
     );
+
+    transfer_buffers_ = std::make_unique<VulkanTransferBuffers>(
+        vulkan_device_.get(),
+        vma_allocator_,
+        std::make_unique<VulkanCommandPool>(
+            vulkan_device_->get()
+        )
+    );
 }
 
 VulkanRenderBackend::~VulkanRenderBackend()
@@ -147,11 +160,93 @@ VulkanRenderBackend::~VulkanRenderBackend()
     presentation_framebuffers_.clear();
     presentation_square_.reset();
 
+    if (gui_initialized_) {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+        vkDestroyDescriptorPool(
+            vulkan_device_->get(),
+            im_gui_descriptor_pool_,
+            nullptr
+        );
+    }
+
     vmaDestroyAllocator(vma_allocator_);
+}
+
+void VulkanRenderBackend::InitializeGUI()
+{
+    VkDescriptorPoolSize poolSizes[] = {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1000 * IM_ARRAYSIZE(poolSizes);
+    poolInfo.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(poolSizes));
+    poolInfo.pPoolSizes = poolSizes;
+
+    vkCreateDescriptorPool(
+        vulkan_device_->get(),
+        &poolInfo, nullptr,
+        &im_gui_descriptor_pool_
+    );
+
+    ImGui_ImplVulkan_InitInfo init_info{};
+    VkDescriptorPoolCreateInfo desc_pool_info{};
+
+    gui_initialized_ = true;
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+
+    //io.ConfigFlags |
+    ImGui_ImplGlfw_InitForVulkan(
+        vulkan_swapchain_->getWindow(),
+        true
+    );
+
+    init_info.Instance = vulkan_instance_->get();
+    init_info.Device = vulkan_device_->get();
+    init_info.PhysicalDevice = vulkan_device_->getPhysical();
+    init_info.QueueFamily =
+        vulkan_device_->getQueueFamilies()->graphicsFamilyIndex;
+    init_info.Queue = vulkan_device_->GetQueue();
+    init_info.PipelineCache = VK_NULL_HANDLE;
+    init_info.DescriptorPool = im_gui_descriptor_pool_;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = vulkan_swapchain_->getImageCount();
+    init_info.ImageCount = vulkan_swapchain_->getImageCount();
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.CheckVkResultFn = [](VkResult vk_res) {
+        if (vk_res != VK_SUCCESS) {
+        }
+    };
+    init_info.RenderPass = presentation_render_pass_->vk_render_pass;
+    init_info.Allocator = nullptr;
+    ImGui_ImplVulkan_Init(&init_info);
+    ImGui_ImplVulkan_CreateFontsTexture();
+    ImGui_ImplVulkan_DestroyFontsTexture();
 }
 
 void VulkanRenderBackend::BeginFrame()
 {
+    if (gui_initialized_) {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 }
 
 void VulkanRenderBackend::BeginRender()
@@ -217,9 +312,16 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
         1
     );
     presentation_cmd_buffer_->CmdDraw(6, 0);
+
+    ImGui::Render();
+    ImDrawData *draw_data = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(
+        draw_data, presentation_cmd_buffer_->vk_command_buffer,
+        nullptr
+    );
+
     presentation_cmd_buffer_->CmdEndRenderPass();
     presentation_cmd_buffer_->EndRecord();
-
     vulkan_device_->GraphicsSubmit(
         presentation_cmd_buffer_.get(),
         nullptr,
@@ -227,6 +329,7 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
         EStageWait::kStageColorAttachment,
         in_flight_fence_.get()
     );
+
 
     vulkan_device_->PresentSubmit(
         *vulkan_swapchain_,
@@ -262,7 +365,7 @@ void VulkanRenderBackend::UpdateBuffer(RBuffer *buffer, void *data, size_t start
     vmaUnmapMemory(vma_allocator_, vk_buffer->vk_allocation);
 }
 
-RTexture *VulkanRenderBackend::CreateTexture2D(uint32_t width, uint32_t height, EFormat pixel_fmt, void *contents)
+RTexture *VulkanRenderBackend::CreateImage2D(uint32_t width, uint32_t height, EFormat pixel_fmt)
 {
     VulkanTexture *texture = new VulkanTexture(vulkan_device_->get(), vma_allocator_, pixel_fmt, width, height);
 
@@ -321,6 +424,11 @@ RTexture *VulkanRenderBackend::CreateTexture2D(uint32_t width, uint32_t height, 
     }
 
     return texture;
+}
+
+RTexture *VulkanRenderBackend::CreateTexture2D(const RTextureFile *file)
+{
+    return transfer_buffers_->CreateTexture2D(file, true);
 }
 
 RRenderPass *VulkanRenderBackend::CreateRenderPass(const RRenderPassAttachment *color_attachments, int num_color_attachments, const RRenderPassAttachment *depth)
@@ -418,6 +526,17 @@ RDescriptorPool *VulkanRenderBackend::CreateDescriptorPool(
         max_sets,
         binding_type
     );
+}
+
+RSampler *VulkanRenderBackend::CreateSampler(
+    RSamplerFilterMode filter_mode,
+    RSamplerAddressMode address_mode)
+{
+    RSamplerAttributes sampler_attributes{
+        .filter_mode = filter_mode,
+        .address_mode = address_mode
+    };
+    return new VulkanSampler(vulkan_device_->get(), &sampler_attributes);
 }
 
 void VulkanRenderBackend::Finalize()

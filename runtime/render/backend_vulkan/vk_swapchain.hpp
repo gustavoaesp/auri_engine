@@ -24,6 +24,8 @@ public:
 
     uint32_t getImageCount() { return images_.size(); }
 
+    GLFWwindow *getWindow() { return window_; }
+
 private:
     VulkanInstance* instance_;
     VkSwapchainKHR swapchain_;
@@ -37,6 +39,7 @@ private:
     void CreateImages();
 
     VulkanDevice *device_;
+    GLFWwindow *window_;
 };
 
 }

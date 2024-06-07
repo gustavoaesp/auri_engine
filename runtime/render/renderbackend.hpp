@@ -10,7 +10,10 @@
 #include "primitives/framebuffer.hpp"
 #include "primitives/pipeline.hpp"
 #include "primitives/render_pass.hpp"
+#include "primitives/sampler.hpp"
 #include "primitives/shader.hpp"
+
+#include "texture_file.hpp"
 
 #include <stdint.h>
 
@@ -21,6 +24,11 @@ class IRenderBackend
 {
 public:
     virtual ~IRenderBackend() {}
+
+    /*
+     *  This will make an initialization into ImGui
+     */
+    virtual void InitializeGUI() = 0;
 
     virtual void BeginFrame() = 0;
     virtual void BeginRender() = 0;
@@ -45,10 +53,13 @@ public:
         size_t size
     ) = 0;
 
-    virtual RTexture *CreateTexture2D(
+    virtual RTexture *CreateImage2D(
         uint32_t width, uint32_t height,
-        EFormat pixel_fmt,
-        void* contents
+        EFormat pixel_fmt
+    ) = 0;
+
+    virtual RTexture *CreateTexture2D(
+        const RTextureFile *file
     ) = 0;
 
     /*
@@ -112,6 +123,11 @@ public:
     virtual RDescriptorPool *CreateDescriptorPool(
         uint32_t max_sets,
         RDescriptorLayoutBindingType
+    ) = 0;
+
+    virtual RSampler *CreateSampler(
+        RSamplerFilterMode,
+        RSamplerAddressMode
     ) = 0;
 
 protected:

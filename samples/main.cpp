@@ -3,14 +3,17 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+
 #include <backend_vulkan/instance.hpp>
 #include <backend_vulkan/backend.hpp>
 #include <render/vertex.hpp>
 #include <render/transform/matrix.hpp>
+#include <render/texture_file.hpp>
 
 eng::Vertex my_triangle[3] = {
-    {eng::vec3f( 0.0f, 1.0f, 0.0f), eng::vec4f(1.0f, 0.0f, 0.0f, 1.0f)},
-    {eng::vec3f( 1.0f,-1.0f, 0.0f), eng::vec4f(0.0f, 1.0f, 0.0f, 1.0f)},
+    {eng::vec3f( 0.0f, 1.0f, 0.0f), eng::vec4f(0.5f, 1.0f, 0.0f, 1.0f)},
+    {eng::vec3f( 1.0f,-1.0f, 0.0f), eng::vec4f(1.0f, 0.0f, 0.0f, 1.0f)},
     {eng::vec3f(-1.0f,-1.0f, 0.0f), eng::vec4f(0.0f, 0.0f, 1.0f, 1.0f)}
 };
 
@@ -39,6 +42,8 @@ int main(int argc, char** argv)
     blend_state.num_blend_attachments = 1;
     blend_state.blend_attachments[0].blendEnable = false;
 
+    eng::RTextureFile tex_file = eng::RTextureRead("textures/texture.tex");
+
     {
         VkSurfaceKHR win_surface;
         GLFWwindow *window = glfwCreateWindow(1600, 900, "Test", nullptr, nullptr);
@@ -48,16 +53,21 @@ int main(int argc, char** argv)
             window,
             win_surface
         );
+        backend->InitializeGUI();
         {
-            eng::RDescriptorLayoutBinding binding{
+            eng::RDescriptorLayoutBinding binding_buffer{
                 .type = eng::RDescriptorLayoutBindingType::kUniformBuffer,
                 .bindingIndex = 0,
                 .bindingStageAccessFlags = eng::RDescriptorLayoutBindingStageAccess::EShaderStageVertexBit
             };
-            eng::RTexture *output_tex = backend->CreateTexture2D(
+            eng::RDescriptorLayoutBinding binding_tex{
+                .type = eng::RDescriptorLayoutBindingType::kTextureSampler,
+                .bindingIndex = 0,
+                .bindingStageAccessFlags =eng::RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit
+            };
+            eng::RTexture *output_tex = backend->CreateImage2D(
                 1600, 900,
-                eng::EFormat::kFormat_R8G8B8A8_UNORM,
-                nullptr
+                eng::EFormat::kFormat_R8G8B8A8_UNORM
             );
             eng::RRenderPassAttachment rpass_attachment[] = {{
                 .texture = output_tex,
@@ -70,19 +80,33 @@ int main(int argc, char** argv)
                     nullptr
                 )
             );
-            std::unique_ptr<eng::RDescriptorLayout> desc_layout(
+            std::unique_ptr<eng::RDescriptorLayout> desc_layout_buffers(
                 backend->CreateDescriptorLayout(
-                    &binding,
+                    &binding_buffer,
                     1
                 )
             );
-            std::unique_ptr<eng::RDescriptorPool> descriptor_pool(
+            std::unique_ptr<eng::RDescriptorLayout> desc_layout_tex(
+                backend->CreateDescriptorLayout(
+                    &binding_tex,
+                    1
+                )
+            );
+            std::unique_ptr<eng::RDescriptorPool> descriptor_pool_buffer(
                 backend->CreateDescriptorPool(
                     64, eng::RDescriptorLayoutBindingType::kUniformBuffer
                 )
             );
-            std::unique_ptr<eng::RDescriptorSet> desc_set(
-                descriptor_pool->AllocateSet(desc_layout.get())
+            std::unique_ptr<eng::RDescriptorPool> descriptor_pool_tex(
+                backend->CreateDescriptorPool(
+                    64, eng::RDescriptorLayoutBindingType::kTextureSampler
+                )
+            );
+            std::unique_ptr<eng::RDescriptorSet> desc_set_buffers(
+                descriptor_pool_buffer->AllocateSet(desc_layout_buffers.get())
+            );
+            std::unique_ptr<eng::RDescriptorSet> desc_set_tex(
+                descriptor_pool_tex->AllocateSet(desc_layout_tex.get())
             );
             std::unique_ptr<eng::RShader> vtx_shader(
                 backend->CreateShader("shaders/vert.vert.spv", eng::RShaderPipelineBind::kShaderVertex)
@@ -93,6 +117,12 @@ int main(int argc, char** argv)
             std::array<const eng::RShader*, 2> shaders = {
                 vtx_shader.get(), frg_shader.get()
             };
+            std::unique_ptr<eng::RSampler> sampler(
+                backend->CreateSampler(
+                    eng::RSamplerFilterMode::kFilterLinear,
+                    eng::RSamplerAddressMode::kRepeat
+                )
+            );
             std::unique_ptr<eng::RPipeline> pipeline(
                 backend->CreatePipeline(
                     render_pass.get(),
@@ -102,8 +132,11 @@ int main(int argc, char** argv)
                     2,
                     eng::RVertexType::kVertexPos3Col4,
                     eng::RVertexType::kNoFormat,
-                    std::array<eng::RDescriptorLayout*, 1>{desc_layout.get()}.data(),
-                    1
+                    std::array<eng::RDescriptorLayout*, 2>{
+                        desc_layout_buffers.get(),
+                        desc_layout_tex.get()
+                    }.data(),
+                    2
                 )
             );
             std::array<eng::RTexture*, 1> textures = {output_tex};
@@ -135,6 +168,9 @@ int main(int argc, char** argv)
                     nullptr
                 )
             );
+            std::unique_ptr<eng::RTexture> texture(
+                backend->CreateTexture2D(&tex_file)
+            );
             UniformContents uniforms;
 
             eng::vec4f clear(0.0f, 0.0f, 0.0f, 1.0f);
@@ -145,12 +181,17 @@ int main(int argc, char** argv)
                 glfwSwapBuffers(window);
                 backend->BeginFrame();
                 backend->BeginRender();
-                eng::RBufferBinding binding{
+                eng::RBufferBinding binding_buffer{
                     .buffer = uniform_buffer.get(),
                     .start_offset = 0,
                     .size = sizeof(UniformContents)
                 };
-                desc_set->BindBuffers(0, &binding, 1);
+                eng::RTextureSamplerBinding binding_texture{
+                    .texture = texture.get(),
+                    .sampler = sampler.get()
+                };
+                desc_set_buffers->BindBuffers(0, &binding_buffer, 1);
+                desc_set_tex->BindTextures(0, &binding_texture, 1);
                 uniforms.mvp = eng::CreateRotationMatrixZ(angle);
                 uniforms.mvp *= eng::CreateViewMatrix(
                     eng::vec3f(1.0f,1.0f, -2.0f), eng::vec3f(0.0f,0.0f,0.0f),
@@ -164,6 +205,12 @@ int main(int argc, char** argv)
                 //cmd_buff->Reset();
                 cmd_buff->BeginRecord();
 
+                ImGui::Begin("Rotation");
+                ImGui::Text("Rotation slider");
+                ImGui::SliderAngle("Rot X", &angle);
+                ImGui::End();
+
+
                 cmd_buff->CmdBeginRenderPass(
                     render_pass.get(),
                     framebuffer.get(),
@@ -175,8 +222,11 @@ int main(int argc, char** argv)
                 cmd_buff->CmdBindPipeline(pipeline.get());
                 cmd_buff->CmdBindDescriptorSets(
                     pipeline.get(),
-                    (const eng::RDescriptorSet**)std::array<eng::RDescriptorSet*, 1>{desc_set.get()}.data(),
-                    1);
+                    (const eng::RDescriptorSet**)std::array<eng::RDescriptorSet*, 2>{
+                        desc_set_buffers.get(),
+                        desc_set_tex.get()
+                    }.data(),
+                    2);
                 cmd_buff->CmdSetViewport(0, 0, 1600, 900);
                 cmd_buff->CmdSetScissor(0, 0, 1600, 900);
                 cmd_buff->CmdBindVertexBuffer(vbuffer.get(), 0, 0);
@@ -190,7 +240,7 @@ int main(int argc, char** argv)
                 backend->Present(framebuffer.get());
 
                 glfwPollEvents();
-                angle+=0.01f;
+                //angle+=0.01f;
             }
 
             backend->Finalize();

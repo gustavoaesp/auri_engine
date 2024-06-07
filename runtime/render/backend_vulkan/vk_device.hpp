@@ -55,6 +55,8 @@ public:
     void WaitIdle();
 
     VkPhysicalDeviceMemoryProperties& GetMemoryProperties() { return memProperties_; }
+
+    VkQueue GetQueue() const { return graphicsQueue_; }
 private:
     VkPhysicalDevice physical_;
     VkDevice device_;
