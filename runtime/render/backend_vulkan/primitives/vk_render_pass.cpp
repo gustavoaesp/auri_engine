@@ -108,8 +108,28 @@ VulkanRenderPass::VulkanRenderPass(
 
         desc.samples = VK_SAMPLE_COUNT_1_BIT;
 
-        desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        switch(color_attachments[i].load_op) {
+        case RPassAttachmentLoadOp::kClear:
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            break;
+        case RPassAttachmentLoadOp::kLoad:
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            break;
+        case RPassAttachmentLoadOp::kDontCare:
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            break;
+        }
+        switch(color_attachments[i].store_op) {
+        case RPassAttachmentStoreOp::kNone:
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_NONE;
+            break;
+        case RPassAttachmentStoreOp::kStore:
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            break;
+        case RPassAttachmentStoreOp::kDontCare:
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            break;
+        }
 
         desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
