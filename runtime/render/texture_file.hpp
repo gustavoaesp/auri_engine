@@ -28,15 +28,15 @@ static RTextureFile RTextureRead(const char* filename)
 
     if (!file) {
         std::cerr << "Texture not found: \"" << filename << "\n";
-        texture.header.width = 4;
-        texture.header.height = 4;
-        texture.header.width = 4;
-        texture.data = {
-            0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
-            0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
-            0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
-            0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd
-        };
+        texture.header.width = 8;
+        texture.header.height = 8;
+        texture.header.channels = 4;
+
+        texture.data = std::vector<uint8_t>(8 * 8 * 4);
+        for (int i = 0; i < 8 * 8 * 4; ++i) {
+            texture.data[i] = 0xaa;
+        }
+
         return texture;
     }
 

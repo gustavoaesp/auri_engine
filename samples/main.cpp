@@ -202,14 +202,13 @@ int main(int argc, char** argv)
                 );
                 //uniforms.mvp = eng::CreateScaleMatrix(0.4, 0.4, 0.4);
                 backend->UpdateBuffer(uniform_buffer.get(), &uniforms, 0, sizeof(eng::mtx4f));
-                //cmd_buff->Reset();
+                cmd_buff->Reset();
                 cmd_buff->BeginRecord();
 
                 ImGui::Begin("Rotation");
                 ImGui::Text("Rotation slider");
                 ImGui::SliderAngle("Rot X", &angle);
                 ImGui::End();
-
 
                 cmd_buff->CmdBeginRenderPass(
                     render_pass.get(),
