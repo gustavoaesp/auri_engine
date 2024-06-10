@@ -27,4 +27,14 @@ struct Vertex_NorTuv
     vec2f texel;
 };
 
+static size_t GetVertexSize(RVertexType vertex_type)
+{
+    switch(vertex_type) {
+    case RVertexType::kVertexPos3Col4:
+        return sizeof(Vertex);
+    case RVertexType::kVertexPos3Nor3Tex2:
+        return sizeof(Vertex_NorTuv);
+    }
+}
+
 }
