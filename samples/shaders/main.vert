@@ -17,9 +17,7 @@ layout (location = 0) out vec3 outNorm;
 layout (location = 1) out vec2 outUV;
 
 void main() {
-    outNorm = outNorm;
+    outNorm = inNormal;
     outUV = inUV;
     gl_Position = view_proj_mtx * model_mtx * vec4(inPosition, 1.0f);
-    //gl_Position = view_proj_mtx * vec4(inPosition, 1.0f);
-    //gl_Position = vec4(inPosition, 1.0f);
 }

@@ -50,6 +50,7 @@ set(RENDER_SRC
     render/scene/scene_mesh.cpp
     render/mesh.cpp
     render/renderer.cpp
+    render/stages/render_stage_geometry.cpp
 
     # ImGui
     third_party/imgui/imgui.cpp
