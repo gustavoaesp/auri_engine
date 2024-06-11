@@ -44,7 +44,12 @@ endif()
 set(RENDER_SRC
     render/transform/matrix.cpp
     render/transform/vector.cpp
-    #render/texture_file.cpp
+    render/mesh.cpp
+    render/managers/mesh_manager.cpp
+    render/managers/texture_manager.cpp
+    render/scene/scene_mesh.cpp
+    render/mesh.cpp
+    render/renderer.cpp
 
     # ImGui
     third_party/imgui/imgui.cpp

@@ -388,9 +388,14 @@ RTexture *VulkanRenderBackend::CreateImage2D(uint32_t width, uint32_t height, EF
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT
-                    | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-                    | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    if (pixel_fmt != EFormat::kFormat_R24G8) {
+        imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT
+                        | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+                        | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    } else {
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                        | VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -413,7 +418,11 @@ RTexture *VulkanRenderBackend::CreateImage2D(uint32_t width, uint32_t height, EF
     viewInfo.image = texture->vk_image;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = fmt_map_pair->second;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (pixel_fmt != EFormat::kFormat_R24G8) {
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    } else {
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;

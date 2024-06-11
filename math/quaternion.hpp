@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include "math/matrix.hpp"
+#include "math/vector.hpp"
 
 namespace eng
 {

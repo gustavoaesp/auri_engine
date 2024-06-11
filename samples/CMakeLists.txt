@@ -9,6 +9,8 @@ target_link_libraries(sample pengine)
 set (GLSL_SHADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vert.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/frag.frag
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/main.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/main.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/presentation.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/presentation.frag
 )

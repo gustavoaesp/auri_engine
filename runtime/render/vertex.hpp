@@ -35,6 +35,7 @@ static size_t GetVertexSize(RVertexType vertex_type)
     case RVertexType::kVertexPos3Nor3Tex2:
         return sizeof(Vertex_NorTuv);
     }
+    return 0;
 }
 
 }
