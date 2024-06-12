@@ -169,19 +169,21 @@ void RStageGeometry::Render(const RScene &scene)
     uint32_t buffers_count = 0;
     uint32_t textures_count = 0;
 
-    mtx4f view_proj = CreateViewMatrix(
-        vec3f(2.0f, 2.0f, -2.0f),
-        vec3f(0.0f, 0.0f, 0.0f),
-        vec3f(0.0f, 1.0f, 0.0f)
-    );
-    view_proj *= CreatePerspectiveProjectionMatrix(
-        16.0f/9.0f, 60.0f, 0.1f, 100.0f
-    );
+    if (scene.active_camera) {
+        mtx4f view_proj = CreateViewMatrix(
+            scene.active_camera->position,
+            scene.active_camera->look_pos,
+            scene.active_camera->up
+        );
 
-    backend_ref_->UpdateBuffer(
-        view_projection_uniform_.get(),
-        &view_proj, 0, sizeof(mtx4f)
-    );
+        view_proj *= CreatePerspectiveProjectionMatrix(
+            16.0f/9.0f, scene.active_camera->fovy, 0.1f, 1000.0f
+        );
+        backend_ref_->UpdateBuffer(
+            view_projection_uniform_.get(),
+            &view_proj, 0, sizeof(mtx4f)
+        );
+    }
 
     std::array<vec4f, 3> clear_colors{
         vec4f(0.0f, 0.0f, 0.0f, 1.0f),
@@ -198,8 +200,13 @@ void RStageGeometry::Render(const RScene &scene)
         0x00, false
     );
     for (const auto& scene_mesh: scene.scene_meshes) {
-        mtx4f transform = CreateTranslateMatrix(scene_mesh->position);
+        mtx4f transform = CreateScaleMatrix(
+            scene_mesh->scale(0),
+            scene_mesh->scale(1),
+            scene_mesh->scale(2)
+        );
         transform *= scene_mesh->rotation.toMatrix();
+        transform *= CreateTranslateMatrix(scene_mesh->position);
         RDescriptorSet *descriptor_set_buffers = nullptr;
         if (buffers_count >= descriptor_sets_buffer_.size()) {
             descriptor_sets_buffer_.push_back(

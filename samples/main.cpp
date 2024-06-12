@@ -114,6 +114,8 @@ int main(int argc, char** argv)
                     mesh_rot,
                     mesh_scale
                 );
+
+                mesh_instance->position(0) = -4.0f;
             std::shared_ptr<eng::RSceneMesh> plane_instance =
                 std::make_shared<eng::RSceneMesh>(
                     "my_plane",
@@ -122,8 +124,17 @@ int main(int argc, char** argv)
                     mesh_scale
                 );
 
+            scene.active_camera = std::make_unique<eng::RSceneCamera>(
+                eng::vec3f(1.0f, 1.0f, -1.0f),
+                eng::vec3f(0.0f, 0.0f, 0.0f),
+                eng::vec3f(0.0f, 1.0f, 0.0f),
+                60.0f
+            );
+
             scene.scene_meshes.push_back(plane_instance);
             scene.scene_meshes.push_back(mesh_instance);
+
+            mesh_instance->scale(0) = 0.8f;
 
             plane_instance->scale = eng::vec3f(4.0f, 4.0f, 4.0f);
 
@@ -135,6 +146,7 @@ int main(int argc, char** argv)
                 renderer->Present();
                 mesh_instance->rotation.setAxisRotation(eng::vec3f(0.0f,0.0f, 1.0f), angle);
                 angle += 0.01f;
+                scene.active_camera->position(0) += 0.001f;
             }
         }
         glfwDestroyWindow(window);

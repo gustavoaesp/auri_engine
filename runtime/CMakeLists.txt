@@ -47,9 +47,10 @@ set(RENDER_SRC
     render/mesh.cpp
     render/managers/mesh_manager.cpp
     render/managers/texture_manager.cpp
-    render/scene/scene_mesh.cpp
     render/mesh.cpp
     render/renderer.cpp
+    render/scene/scene_mesh.cpp
+    render/scene/scene_camera.cpp
     render/stages/render_stage_geometry.cpp
 
     # ImGui

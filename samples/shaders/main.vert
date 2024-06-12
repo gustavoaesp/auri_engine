@@ -17,7 +17,8 @@ layout (location = 0) out vec3 outNorm;
 layout (location = 1) out vec2 outUV;
 
 void main() {
-    outNorm = inNormal;
+    mat4 model_inv_trans = transpose(inverse(model_mtx));
+    outNorm = (model_inv_trans * vec4(inNormal, 1.0f)).xyz;
     outUV = inUV;
     gl_Position = view_proj_mtx * model_mtx * vec4(inPosition, 1.0f);
 }
