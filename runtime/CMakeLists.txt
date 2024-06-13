@@ -31,6 +31,9 @@ if (BUILD_VULKAN)
         #imgui
         third_party/imgui/backends/imgui_impl_glfw.cpp
         third_party/imgui/backends/imgui_impl_vulkan.cpp
+
+        #glfw input
+        input/backends/glfw.cpp
     )
 
     set (RENDER_BACKEND_INCLUDE_DIRS
@@ -38,7 +41,7 @@ if (BUILD_VULKAN)
     )
 
     #add_compile_definitions(VMA_IMPLEMENTATION)
-    add_compile_definitions(VULKAN_ENABLED)
+    add_compile_definitions(VULKAN_IMPL)
 endif()
 
 set(RENDER_SRC
@@ -61,6 +64,10 @@ set(RENDER_SRC
     third_party/imgui/imgui_widgets.cpp
 )
 
+set (INPUT_SRC
+    input/input.cpp
+)
+
 set(RENDER_INCLUDES
     third_party/imgui
     third_party/imgui/backends
@@ -69,6 +76,7 @@ set(RENDER_INCLUDES
 add_library(pengine
     ${RENDER_BACKEND_SRC}
     ${RENDER_SRC}
+    ${INPUT_SRC}
 )
 target_link_libraries(pengine vulkan)
 target_link_libraries(pengine glfw)

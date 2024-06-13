@@ -1,0 +1,36 @@
+{
+	"input_list": [
+		{
+			"name": "up",
+			"bindings": {
+				"PC": "W"
+			}
+		},
+		{
+			"name": "left",
+			"bindings": {
+				"PC": "A"
+			}
+		},
+		{
+			"name": "right",
+			"bindings": {
+				"PC": "D"
+			}
+		},
+		{
+			"name": "down",
+			"bindings": {
+				"PC": "S"
+			}
+		}
+	],
+	"surface_list": [
+		{
+			"name": "camera",
+			"bindings":{
+				"PC": "mouse_xy"
+			}
+		}
+	]
+}

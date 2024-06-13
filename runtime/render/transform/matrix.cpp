@@ -81,8 +81,8 @@ void debug_print(const std::string& name, const vec3f& vec)
 mtx4f CreateViewMatrix(const vec3f& eye_pos, const vec3f& look_pos, const vec3f& up)
 {
     vec3f zaxis = (look_pos - eye_pos).unit();
-    vec3f xaxis = VectorCross(up, zaxis);
-    vec3f yaxis = VectorCross(zaxis, xaxis);
+    vec3f xaxis = VectorCross(up, zaxis).unit();
+    vec3f yaxis = VectorCross(zaxis, xaxis).unit();
 
     return mtx4f(
         xaxis(0), yaxis(0), zaxis(0), 0.0f,

@@ -50,6 +50,12 @@ public:
 		}
 	}
 
+	void operator *=(const T& a) {
+		for (int i = 0; i < ndimensions; ++i) {
+			elem_[i] *= a;
+		}
+	}
+
 	void operator /=(const T& a)
 	{
 		for (int i = 0; i < ndimensions; ++i)
@@ -73,6 +79,12 @@ public:
 	}
 
 	Vector<T, ndimensions> operator * (const Vector<T, ndimensions>& a) const
+	{
+		Vector<T, ndimensions> res(*this);
+		res *= a;
+		return res;
+	}
+	Vector<T, ndimensions> operator * (T a) const
 	{
 		Vector<T, ndimensions> res(*this);
 		res *= a;

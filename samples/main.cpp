@@ -9,12 +9,9 @@
 #include <backend_vulkan/backend.hpp>
 #include <render/renderer.hpp>
 #include <render/scene/scene.hpp>
-
-/*eng::Vertex my_triangle[3] = {
-    {eng::vec3f( 0.0f, 1.0f, 0.0f), eng::vec4f(0.5f, 1.0f, 0.0f, 1.0f)},
-    {eng::vec3f( 1.0f,-1.0f, 0.0f), eng::vec4f(1.0f, 0.0f, 0.0f, 1.0f)},
-    {eng::vec3f(-1.0f,-1.0f, 0.0f), eng::vec4f(0.0f, 0.0f, 1.0f, 1.0f)}
-};*/
+#include <render/transform/vector.hpp>
+#include <input/input.hpp>
+#include <input/backends/glfw.hpp>
 
 eng::Vertex_NorTuv my_triangle[3] = {
     {eng::vec3f( 0.0f, 1.0f, 0.0f), eng::vec3f(0.0f, 0.0f, -1.0f), eng::vec2f(0.5f, 1.0f)},
@@ -44,6 +41,24 @@ struct UniformContents
     eng::mtx4f mvp;
 };
 
+static float hangle = 0;
+static float vangle = M_PI / 4.0f;
+
+void CameraSpheric(eng::RSceneCamera *cam, const eng::vec2f &mouse_surface)
+{
+    hangle += mouse_surface(0) * 0.016f / 4.0f;
+    vangle += mouse_surface(1) * 0.016f / 4.0f * -1.0f;
+
+    float length = 3.0f;
+    cam->position(1) = sin(vangle);
+    cam->position(0) = cos(hangle) * cos(vangle);
+    cam->position(2) = sin(hangle) * cos(vangle);
+    cam->position *= length;
+
+    cam->position += cam->look_pos;
+
+}
+
 int main(int argc, char** argv)
 {
     if (!glfwInit()) {
@@ -69,6 +84,10 @@ int main(int argc, char** argv)
             std::move(vk_instance),
             window,
             win_surface
+        );
+        eng::g_input_manager = std::make_unique<eng::InputManager>(
+            std::make_unique<eng::GLFWInput>(window),
+            "input.json"
         );
         backend->InitializeGUI();
         {
@@ -137,16 +156,36 @@ int main(int argc, char** argv)
             mesh_instance->scale(0) = 0.8f;
 
             plane_instance->scale = eng::vec3f(4.0f, 4.0f, 4.0f);
+            eng::g_input_manager->SetMouseTracking(true);
 
             float angle = 0;
             while (!glfwWindowShouldClose(window)) {
-                glfwPollEvents();
                 renderer->BeginFrame();
                 renderer->Render(scene);
                 renderer->Present();
+                eng::g_input_manager->Poll();
+
                 mesh_instance->rotation.setAxisRotation(eng::vec3f(0.0f,0.0f, 1.0f), angle);
                 angle += 0.01f;
-                scene.active_camera->position(0) += 0.001f;
+
+                eng::vec3f diff_camera = scene.active_camera->look_pos - scene.active_camera->position;
+                diff_camera(1) = 0;
+                diff_camera = diff_camera.unit();
+
+                if (eng::g_input_manager->GetState("up")) {
+                    scene.active_camera->look_pos += diff_camera * ((float) 0.016f / 4.0f);
+                }
+                if (eng::g_input_manager->GetState("down")) {
+                    mesh_instance->position(2) -= 0.01f;
+                }
+                if (eng::g_input_manager->GetState("left")) {
+                    mesh_instance->position(0) -= 0.01f;
+                }
+                if (eng::g_input_manager->GetState("right")) {
+                    mesh_instance->position(0) += 0.01f;
+                }
+
+                CameraSpheric(scene.active_camera.get(), eng::g_input_manager->GetSurface("camera"));
             }
         }
         glfwDestroyWindow(window);
