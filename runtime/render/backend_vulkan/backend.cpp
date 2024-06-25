@@ -313,12 +313,14 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
     );
     presentation_cmd_buffer_->CmdDraw(6, 0);
 
-    ImGui::Render();
-    ImDrawData *draw_data = ImGui::GetDrawData();
-    ImGui_ImplVulkan_RenderDrawData(
-        draw_data, presentation_cmd_buffer_->vk_command_buffer,
-        nullptr
-    );
+    if (gui_initialized_) {
+        ImGui::Render();
+        ImDrawData *draw_data = ImGui::GetDrawData();
+        ImGui_ImplVulkan_RenderDrawData(
+            draw_data, presentation_cmd_buffer_->vk_command_buffer,
+            nullptr
+        );
+    }
 
     presentation_cmd_buffer_->CmdEndRenderPass();
     presentation_cmd_buffer_->EndRecord();

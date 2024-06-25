@@ -25,13 +25,22 @@ static float callback_cursor_y = 0;
 
 static vec2f curr_diff;
 
+static bool first_frame = true;
+
 static void mouse_callback(GLFWwindow *window, double nx, double ny)
 {
-	curr_diff(0) = nx - callback_cursor_x;
-	curr_diff(1) = ny - callback_cursor_y;
+	if (first_frame) {
+		first_frame = 0;
+		return;
+	}
+	curr_diff(0) = (nx - callback_cursor_x);
+	curr_diff(1) = (ny - callback_cursor_y);
 
 	callback_cursor_x = nx;
 	callback_cursor_y = ny;
+
+	std::cerr << "curr_dif.x = " << curr_diff(0) << "\n";
+	std::cerr << "curr_dif.y = " << curr_diff(1) << "\n";
 }
 
 GLFWInput::GLFWInput(GLFWwindow* window):
@@ -46,9 +55,6 @@ void GLFWInput::Poll()
 {
 	curr_diff = vec2f();
 	glfwPollEvents();
-	if (mouse_tracking_enabled_) {
-		glfwSetCursorPos(window_ref_, 800, 450);
-	}
 }
 
 bool GLFWInput::GetState(const std::string& id)
@@ -81,7 +87,11 @@ void GLFWInput::SetMouseTracking(bool enable)
 	mouse_tracking_enabled_ = enable;
 
 	if (enable) {
+		//glfwSetCursorPos(window_ref_, 800, 450);
 		glfwSetInputMode(window_ref_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		if (glfwRawMouseMotionSupported()) {
+			glfwSetInputMode(window_ref_, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+		}
 		glfwSetCursorPosCallback(window_ref_, &mouse_callback);
 	} else {
 		glfwSetInputMode(window_ref_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

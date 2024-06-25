@@ -46,8 +46,14 @@ static float vangle = M_PI / 4.0f;
 
 void CameraSpheric(eng::RSceneCamera *cam, const eng::vec2f &mouse_surface)
 {
-    hangle += mouse_surface(0) * 0.016f / 4.0f;
-    vangle += mouse_surface(1) * 0.016f / 4.0f * -1.0f;
+    hangle += mouse_surface(0) * 0.005f;
+    vangle -= mouse_surface(1) * 0.005f;
+
+    if (vangle >= M_PI / 2) {
+        vangle = M_PI / 2;
+    } else if (vangle <= -M_PI / 2) {
+        vangle = -M_PI / 2;
+    }
 
     float length = 3.0f;
     cam->position(1) = sin(vangle);
@@ -160,10 +166,10 @@ int main(int argc, char** argv)
 
             float angle = 0;
             while (!glfwWindowShouldClose(window)) {
+                eng::g_input_manager->Poll();
                 renderer->BeginFrame();
                 renderer->Render(scene);
                 renderer->Present();
-                eng::g_input_manager->Poll();
 
                 mesh_instance->rotation.setAxisRotation(eng::vec3f(0.0f,0.0f, 1.0f), angle);
                 angle += 0.01f;
@@ -176,13 +182,24 @@ int main(int argc, char** argv)
                     scene.active_camera->look_pos += diff_camera * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("down")) {
-                    mesh_instance->position(2) -= 0.01f;
+                    //mesh_instance->position(2) -= 0.01f;
+                    scene.active_camera->look_pos -= diff_camera * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("left")) {
-                    mesh_instance->position(0) -= 0.01f;
+                    //mesh_instance->position(0) -= 0.01f;
+                    scene.active_camera->look_pos += eng::vec3f(
+                        -diff_camera(2),
+                        0,
+                        diff_camera(0)
+                    ) * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("right")) {
-                    mesh_instance->position(0) += 0.01f;
+                    //mesh_instance->position(0) += 0.01f;
+                    scene.active_camera->look_pos -= eng::vec3f(
+                        -diff_camera(2),
+                        0,
+                        diff_camera(0)
+                    ) * ((float) 0.016f / 4.0f);
                 }
 
                 CameraSpheric(scene.active_camera.get(), eng::g_input_manager->GetSurface("camera"));
