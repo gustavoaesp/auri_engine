@@ -11,5 +11,5 @@ layout (location = 1) out vec4 outNormal;
 void main()
 {
     outColor = texture(diffuseSampler, inUV);
-    outNormal = vec4(inNormal, 1.0f);
+    outNormal = vec4((normalize(inNormal) + 1.0f) / 2, 1.0f);
 }
