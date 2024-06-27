@@ -24,9 +24,9 @@ uint32_t my_triangle_indices[3] = {
 };
 
 eng::Vertex_NorTuv my_plane[4] = {
-    {eng::vec3f(-1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(0.0f, 4.0f)},
-    {eng::vec3f( 1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(4.0f, 4.0f)},
-    {eng::vec3f( 1.0f, 0.0f,-1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(4.0f, 0.0f)},
+    {eng::vec3f(-1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(0.0f, 8.0f)},
+    {eng::vec3f( 1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(8.0f, 8.0f)},
+    {eng::vec3f( 1.0f, 0.0f,-1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(8.0f, 0.0f)},
     {eng::vec3f(-1.0f, 0.0f,-1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(0.0f, 0.0f)}
 };
 
@@ -149,6 +149,14 @@ int main(int argc, char** argv)
                     mesh_scale
                 );
 
+            std::shared_ptr<eng::RSceneMesh> trees_instance =
+                std::make_shared<eng::RSceneMesh>(
+                    "out.c3d",
+                    eng::vec3f(0.0f, 0.0f, 0.0f),
+                    eng::Quaternion(0, 0, 0, 0),
+                    eng::vec3f(0.2f, 0.2f, 0.2f)
+                );
+
             scene.active_camera = std::make_unique<eng::RSceneCamera>(
                 eng::vec3f(1.0f, 1.0f, -1.0f),
                 eng::vec3f(0.0f, 0.0f, 0.0f),
@@ -158,6 +166,7 @@ int main(int argc, char** argv)
 
             scene.scene_meshes.push_back(plane_instance);
             scene.scene_meshes.push_back(mesh_instance);
+            scene.scene_meshes.push_back(trees_instance);
 
             mesh_instance->scale(0) = 0.8f;
 

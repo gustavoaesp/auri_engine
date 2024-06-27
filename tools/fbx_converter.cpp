@@ -6,7 +6,20 @@
 #include <vector>
 #include <string.h>
 
-#include "render/mesh_file.hpp"
+#include <render/mesh_file.hpp>
+#include <render/vertex.hpp>
+
+struct Material
+{
+    std::string diffuse;
+};
+
+struct Submesh
+{
+    Material mat;
+    std::vector<eng::Vertex_NorTuv> vertices;
+    std::vector<uint32_t> indices;
+};
 
 std::vector<uint8_t> contents;
 
@@ -80,7 +93,7 @@ void IterateMesh(const ofbx::Object& obj, int level)
     print_spaces(level + 1);
     std::cout << "Name: " << mesh.name << "\n";
 
-    //IterateMaterial(*mesh.getMaterial(0), level + 1);
+    IterateMaterial(*mesh.getMaterial(0), level + 1);
 }
 
 void IterateGeometry(const ofbx::Object& obj, int level)
@@ -92,164 +105,66 @@ void IterateGeometry(const ofbx::Object& obj, int level)
 
     print_spaces(level + 1);
     std::cout << "Index count: " << indexCount << "  VertexCount: " << vertexCount << "\n";
-    print_spaces(level + 1);
-    std::cout << "indices:\n";
-    const int* indices = geometry.getFaceIndices();
-    const ofbx::Vec3* vertices = geometry.getVertices();
-
-/*
-    for (int i = 0; i < indexCount; ++i) {
-        int index = indices[i];
-        if (index < 0) {
-            index = ~index;
-        }
-        const ofbx::Vec3& vec = vertices[index];
-        print_spaces(level + 1);
-        printf("{%.4f, %.4f, %.4f} (%d)\n", vec.x, vec.y, vec.z, index);
-    }*/
-
 }
 
-void ProcessMesh(const ofbx::Mesh& mesh)
+std::string ConvertTextureFilename(const char *filename)
 {
-    if (!mesh.getMaterialCount()) {
-        std::cerr << "Error: no material in mesh\n";
-    }
-
-    const auto* geometry = mesh.getGeometry();
-
-/*
-    eng::FileMesh file_mesh;
-    file_mesh.vtx_type = eng::E_VTX_POS3_NOR3_TEX2;
-    file_mesh.childCount = 0;
-    file_mesh.indexCount = geometry->getIndexCount();
-    file_mesh.vertexCount = geometry->getVertexCount();
-
-    const ofbx::Material* material = mesh.getMaterial(0);
-    const ofbx::Texture* diffuse = material->getTexture(ofbx::Texture::TextureType::DIFFUSE);
-    char diffuse_filename[1024] = {};
-    diffuse->getFileName().toString(diffuse_filename);
-    // TODO change to the internal format extension
-    file_mesh.material.spec_exp = 0;
-
-    std::filesystem::path p = diffuse_filename;
+    std::filesystem::path p = filename;
     auto diffuse_file = p.filename();
     diffuse_file.replace_extension("tex");
     diffuse_file = "textures" / diffuse_file;
 
-    strcpy(file_mesh.material.diffuse_texture, diffuse_file.c_str());
+    return diffuse_file.string();
+}
 
-    std::vector<eng::Vertex_NorTuv> vertices(file_mesh.vertexCount);
-    std::vector<int> indices(file_mesh.indexCount);
+static std::vector<std::unique_ptr<Submesh>> submeshes;
+
+std::unique_ptr<Submesh> ProcessSubmesh(const ofbx::Mesh& mesh)
+{
+    const auto* geometry = mesh.getGeometry();
+    auto submesh = std::make_unique<Submesh>();
+    if (!mesh.getMaterialCount()) {
+        std::cerr << "Error: no material in mesh\n";
+        return nullptr;
+    }
+    const ofbx::Material *material = mesh.getMaterial(0);
+    const ofbx::Texture *diffuse = material->getTexture(ofbx::Texture::TextureType::DIFFUSE);
+
+    submesh->indices = std::vector<uint32_t>(geometry->getIndexCount());
+    submesh->vertices = std::vector<eng::Vertex_NorTuv>(geometry->getVertexCount());
+
+    char diffuse_filename[1024];
+    diffuse->getFileName().toString(diffuse_filename);
+
+    submesh->mat.diffuse = ConvertTextureFilename(diffuse_filename);
+
 
     const ofbx::Vec3* fbx_vertices = geometry->getVertices();
     const int* fbx_indices = geometry->getFaceIndices();
 
     // Stupid ass conversion
-    for (int i = 0; i < file_mesh.vertexCount; ++i) {
-        vertices[i].position(0) = fbx_vertices[i].x;
-        vertices[i].position(1) = fbx_vertices[i].z;
-        vertices[i].position(2) = -fbx_vertices[i].y;
+    for (int i = 0; i < submesh->vertices.size(); ++i) {
+        submesh->vertices[i].position(0) = fbx_vertices[i].x;
+        submesh->vertices[i].position(1) = fbx_vertices[i].z;
+        submesh->vertices[i].position(2) = -fbx_vertices[i].y;
     }
 
-    for (int i = 0; i < file_mesh.indexCount; ++i) {
+    for (int i = 0; i < submesh->indices.size(); ++i) {
         int index = fbx_indices[i];
         if (index < 0) {
             index = ~index;
         }
-        indices[i] = index;
+        submesh->indices[i] = index;
 
-        vertices[index].normal(0) = geometry->getNormals()[i].x;
-        vertices[index].normal(1) = geometry->getNormals()[i].z;
-        vertices[index].normal(2) = -geometry->getNormals()[i].y;
+        submesh->vertices[index].normal(0) = geometry->getNormals()[i].x;
+        submesh->vertices[index].normal(1) = geometry->getNormals()[i].z;
+        submesh->vertices[index].normal(2) = -geometry->getNormals()[i].y;
 
-        vertices[index].texel(0) = geometry->getUVs()[i].x;
-        vertices[index].texel(1) = geometry->getUVs()[i].y;
+        submesh->vertices[index].texel(0) = geometry->getUVs()[i].x;
+        submesh->vertices[index].texel(1) = (1.0f - geometry->getUVs()[i].y);
     }
 
-    eng::FileRoot root;
-    root.signature = eng::kSignature;
-    root.top_level_meshes = 1;*/
-
-    int total_vertex_count = geometry->getVertexCount();
-    int total_index_count = geometry->getIndexCount();
-
-    int num_materials = mesh.getMaterialCount();
-    fprintf(stderr, "num_materials: %d\n", num_materials);
-    std::vector<std::vector<eng::Vertex_NorTuv>> submesh_geometry(num_materials);
-    std::vector<eng::FileSubmesh> submesh_structs(num_materials);
-
-    const ofbx::Vec3* vertices = geometry->getVertices();
-    const ofbx::Vec3* normals = geometry->getNormals();
-    const ofbx::Vec2* uvs = geometry->getUVs();
-    const int* fbx_indices = geometry->getFaceIndices();
-
-    for(int i = 0; i < total_vertex_count; ++i) {
-        int index = fbx_indices[i];
-        if (index < 0) {
-            index = ~index;
-        }
-
-        int face_index = i / 3;
-        int material_index = (geometry->getMaterials())?
-            geometry->getMaterials()[face_index] : 0;
-        submesh_geometry[material_index].push_back(
-            eng::Vertex_NorTuv{
-                .position = eng::vec3f(vertices[index].x, vertices[index].z, -vertices[index].y),
-                .normal = eng::vec3f(normals[i].x, normals[i].z, -normals[i].y),
-                .texel = eng::vec2f(uvs[i].x, 1.0f - uvs[i].y),
-            }
-        );
-    }
-
-    for (int i = 0; i < num_materials; ++i) {
-        const ofbx::Material* material = mesh.getMaterial(i);
-
-        submesh_structs[i].vertexCount = submesh_geometry[i].size();
-        submesh_structs[i].material.active = 1;
-        submesh_structs[i].material.ambient = 0xffffffff;
-        submesh_structs[i].vtx_type = eng::E_VTX_POS3_NOR3_TEX2;
-
-        const ofbx::Texture* diffuse =
-            material->getTexture(ofbx::Texture::TextureType::DIFFUSE);
-        if(diffuse) {
-            char diffuse_filename[512] = {};
-            diffuse->getFileName().toString(diffuse_filename);
-            // change to the internal format extension
-            submesh_structs[i].material.spec_exp = 0;
-            std::filesystem::path p = diffuse_filename;
-            auto diffuse_file = p.filename();
-            diffuse_file.replace_extension("tex");
-            diffuse_file = "textures" / diffuse_file;
-            strcpy(submesh_structs[i].material.diffuse_texture, diffuse_file.c_str());
-        } else {
-            submesh_structs[i].material.diffuse_texture[0] = 0;
-        }
-    }
-
-    eng::FileRoot root;
-    root.signature = eng::kSignature;
-    root.top_level_meshes = 1;
-
-    eng::FileMesh file_mesh;
-    file_mesh.childCount = 1;
-    file_mesh.submesh_count = num_materials;
-
-    {
-        std::ofstream file("out.c3d", std::ios::binary);
-
-        file.write((char*)&root, sizeof(eng::FileRoot));
-        file.write((char*)&file_mesh, sizeof(eng::FileMesh));
-        /*
-        file.write((char*)vertices.data(), sizeof(eng::Vertex_NorTuv) * file_mesh.vertexCount);
-        file.write((char*)indices.data(), sizeof(int) * file_mesh.indexCount);*/
-        for (int i = 0; i < num_materials; ++i) {
-            file.write((char*)&submesh_structs[i], sizeof(eng::FileSubmesh));
-            file.write((char*)submesh_geometry[i].data(),
-                sizeof(eng::Vertex_NorTuv) * submesh_geometry[i].size()
-            );
-        }
-    }
+    return std::move(submesh);
 }
 
 void IterateObj(const ofbx::Object& obj, int level)
@@ -285,7 +200,10 @@ void IterateObj(const ofbx::Object& obj, int level)
 
     if (obj.getType() == ofbx::Object::Type::MESH) {
         IterateMesh(obj, level);
-        ProcessMesh((const ofbx::Mesh&)obj);
+        auto submesh = ProcessSubmesh((const ofbx::Mesh&)obj);
+        if (submesh) {
+            submeshes.push_back(std::move(submesh));
+        }
     }
     else if (obj.getType() == ofbx::Object::Type::GEOMETRY) {
         IterateGeometry(obj, level);
@@ -309,6 +227,33 @@ void IterateScene(const ofbx::IScene& scene)
     }
 }
 
+void SerializeSubmeshes(const char *outfilename)
+{
+    std::ofstream file_out(outfilename, std::ios::binary);
+    if (!file_out) {
+        return;
+    }
+
+    eng::RFileMesh file_header;
+    memcpy(file_header.signature, eng::kMeshFileSignature, 4);
+    file_header.num_submeshes = submeshes.size();
+
+    file_out.write((char*)&file_header, sizeof(eng::RFileMesh));
+
+    for (const auto &submesh : submeshes) {
+        eng::RFileSubmesh submesh_serialized{};
+        strcpy(submesh_serialized.material.diffuse_tex, submesh->mat.diffuse.c_str());
+        submesh_serialized.num_vertices = submesh->vertices.size();
+        submesh_serialized.num_indices = submesh->indices.size();
+        file_out.write((char*)&submesh_serialized, sizeof(eng::RFileSubmesh));
+    }
+
+    for (const auto &submesh : submeshes) {
+        file_out.write((char*)submesh->vertices.data(), submesh->vertices.size() * sizeof(eng::Vertex_NorTuv));
+        file_out.write((char*)submesh->indices.data(), submesh->indices.size() * sizeof(uint32_t));
+    }
+}
+
 int main(int argc, char** argv)
 {
     if (argc < 2) {
@@ -318,6 +263,8 @@ int main(int argc, char** argv)
 
     ofbx::IScene* scene = loadScene(argv[1]);
     IterateScene(*scene);
+
+    SerializeSubmeshes("out.c3d");
 
     return 0;
 }

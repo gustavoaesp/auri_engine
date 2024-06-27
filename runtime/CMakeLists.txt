@@ -51,6 +51,7 @@ set(RENDER_SRC
     render/managers/mesh_manager.cpp
     render/managers/texture_manager.cpp
     render/mesh.cpp
+    render/mesh_file.cpp
     render/renderer.cpp
     render/scene/scene_mesh.cpp
     render/scene/scene_camera.cpp
