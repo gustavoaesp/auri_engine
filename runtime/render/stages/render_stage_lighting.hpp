@@ -16,6 +16,11 @@ struct RLightDirectionalUniform
     float intensity;
 };
 
+struct RLightAmbientUniform
+{
+    vec4f color;
+};
+
 class RStageLighting : public IRenderStage
 {
 public:
@@ -32,6 +37,8 @@ private:
     IRenderBackend *backend_ref_;
     RFramebuffer *gbuffer_ref_;
 
+    std::unique_ptr<RPipeline> ambient_pipeline_;
+
     std::unique_ptr<RShader> directional_vertex_shader_;
     std::unique_ptr<RShader> directional_pixel_shader_;
     std::unique_ptr<RPipeline> directional_pipeline_;
@@ -42,9 +49,15 @@ private:
     std::unique_ptr<RBuffer> quad_vertex_buffer_;
     std::unique_ptr<RBuffer> quad_index_buffer_;
 
+    std::unique_ptr<RBuffer> ambient_uniform_;
+
     void ProcessDirectionalLight(
         RSceneLight *light,
-        RDescriptorSet *textures, RDescriptorSet *buffers
+        RDescriptorSet *buffers, RDescriptorSet *textures
+    );
+    void ProcessAmbientLight(
+        const vec3f &color,
+        RDescriptorSet *buffers, RDescriptorSet *textures
     );
 };
 

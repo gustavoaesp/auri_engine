@@ -68,7 +68,10 @@ static RDescriptorSet *GetSet(
     RDescriptorLayout *layout)
 {
     if (counter >= set_vector.size()) {
-        return set_vector.emplace_back(pool->AllocateSet(layout)).get();
+        set_vector.push_back(
+            std::unique_ptr<RDescriptorSet>(pool->AllocateSet(layout))
+        );
+        return set_vector.back().get();
     }
 
     return set_vector[counter++].get();

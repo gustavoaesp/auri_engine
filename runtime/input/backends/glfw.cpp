@@ -38,9 +38,6 @@ static void mouse_callback(GLFWwindow *window, double nx, double ny)
 
 	callback_cursor_x = nx;
 	callback_cursor_y = ny;
-
-	std::cerr << "curr_dif.x = " << curr_diff(0) << "\n";
-	std::cerr << "curr_dif.y = " << curr_diff(1) << "\n";
 }
 
 GLFWInput::GLFWInput(GLFWwindow* window):

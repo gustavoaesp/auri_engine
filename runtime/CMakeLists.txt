@@ -48,6 +48,7 @@ set(RENDER_SRC
     render/transform/matrix.cpp
     render/transform/vector.cpp
     render/mesh.cpp
+    render/managers/shader_list.cpp
     render/managers/mesh_manager.cpp
     render/managers/texture_manager.cpp
     render/mesh.cpp

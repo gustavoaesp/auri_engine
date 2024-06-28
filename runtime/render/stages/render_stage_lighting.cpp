@@ -2,6 +2,8 @@
 #include "scene/scene.hpp"
 #include "vertex.hpp"
 
+#include "renderer.hpp"
+
 namespace eng
 {
 Vertex quad[4] = {
@@ -74,7 +76,7 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
     );
 
     directional_vertex_shader_ = std::unique_ptr<RShader>(
-        backend->CreateShader("shaders/dirlight.vert.spv", RShaderPipelineBind::kShaderVertex)
+        backend->CreateShader("shaders/light.vert.spv", RShaderPipelineBind::kShaderVertex)
     );
     directional_pixel_shader_ = std::unique_ptr<RShader>(
         backend->CreateShader("shaders/dirlight.frag.spv", RShaderPipelineBind::kShaderFragment)
@@ -90,6 +92,24 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
             RVertexType::kVertexPos3Col4,
             RVertexType::kNoFormat,
             std::array<RDescriptorLayout*, 2>{
+                descriptor_layout_buffers_.get(),
+                descriptor_layout_textures_.get()
+            }.data(), 2
+        )
+    );
+
+    ambient_pipeline_ = std::unique_ptr<RPipeline>(
+        backend->CreatePipeline(
+            render_pass_.get(),
+            &blend_state, nullptr,
+            (const RShader**)std::array<RShader*, 2>{
+                g_shader_list->Get("shaders/ambientlight.frag.spv"),
+                g_shader_list->Get("shaders/light.vert.spv")
+            }.data(),
+            2,
+            RVertexType::kVertexPos3Col4,
+            RVertexType::kNoFormat,
+            std::array<RDescriptorLayout*, 2> {
                 descriptor_layout_buffers_.get(),
                 descriptor_layout_textures_.get()
             }.data(), 2
@@ -120,6 +140,14 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
             RBufferUsage::kIndex, sizeof(uint32_t) * 6, indices
         )
     );
+
+    ambient_uniform_ = std::unique_ptr<RBuffer>(
+        backend->CreateBuffer(
+            RBufferUsage::kUniform,
+            sizeof(vec4f),
+            nullptr
+        )
+    );
 }
 
 RStageLighting::~RStageLighting()
@@ -128,6 +156,14 @@ RStageLighting::~RStageLighting()
 void RStageLighting::Render(RScene &scene)
 {
     ResetCounters();
+
+    RDescriptorSet *descriptor_set_textures = NextSet(RDescriptorLayoutBindingType::kTextureSampler);
+    std::array<RTextureSamplerBinding, 2> texture_bindings{};
+    for (int i = 0; i < 2; ++i) {
+        texture_bindings[i].texture = gbuffer_ref_->GetImage(i);
+        texture_bindings[i].sampler = main_sampler_.get();
+    }
+    descriptor_set_textures->BindTextures(0, texture_bindings.data(), texture_bindings.size());
 
     vec4f clear_color(0.0f, 0.0f, 0.0f, 1.0f);
     cmd_buffer_->Reset();
@@ -138,25 +174,22 @@ void RStageLighting::Render(RScene &scene)
         &clear_color, 1,
         0x00, false
     );
-    uint32_t buffers_count = 0;
-    uint32_t textures_count = 0;
+
+    ProcessAmbientLight(
+        scene.ambient_color,
+        NextSet(RDescriptorLayoutBindingType::kUniformBuffer),
+        descriptor_set_textures
+    );
+
     for (auto &light : scene.scene_lights) {
         RDescriptorSet *descriptor_set_buffers = NextSet(RDescriptorLayoutBindingType::kUniformBuffer);
-        RDescriptorSet *descriptor_set_textures = NextSet(RDescriptorLayoutBindingType::kTextureSampler);
-
-        std::array<RTextureSamplerBinding, 2> texture_bindings{};
-        for (int i = 0; i < 2; ++i) {
-            texture_bindings[i].texture = gbuffer_ref_->GetImage(i);
-            texture_bindings[i].sampler = main_sampler_.get();
-        }
-        descriptor_set_textures->BindTextures(0, texture_bindings.data(), texture_bindings.size());
 
         switch(light->type) {
         case RSceneLightType::kLightDirectional:
             ProcessDirectionalLight(
                 light.get(),
-                descriptor_set_textures,
-                descriptor_set_buffers
+                descriptor_set_buffers,
+                descriptor_set_textures
             );
             break;
         }
@@ -166,7 +199,7 @@ void RStageLighting::Render(RScene &scene)
 }
 
 void RStageLighting::ProcessDirectionalLight(
-    RSceneLight *light, RDescriptorSet *textures, RDescriptorSet *buffers)
+    RSceneLight *light, RDescriptorSet *buffers, RDescriptorSet *textures)
 {
     RLightDirectionalUniform uniform_data;
     uniform_data.direction = light->direction;
@@ -204,6 +237,38 @@ void RStageLighting::ProcessDirectionalLight(
     cmd_buffer_->CmdSetViewport(0, 0, 1600, 900);
     cmd_buffer_->CmdBindVertexBuffer(quad_vertex_buffer_.get(), 0, 0);
     cmd_buffer_->CmdBindIndexBuffer(quad_index_buffer_.get(), 0);
+    cmd_buffer_->CmdDrawIndexed(6, 0, 0);
+}
+
+void RStageLighting::ProcessAmbientLight(
+    const vec3f &color,
+    RDescriptorSet *buffers, RDescriptorSet *textures)
+{
+    backend_ref_->UpdateBuffer(
+        ambient_uniform_.get(),
+        (void*)&color, 0,
+        sizeof(vec3f)
+    );
+    RBufferBinding buffer_binding{
+        .buffer = ambient_uniform_.get(),
+        .start_offset = 0,
+        .size = sizeof(vec4f)
+    };
+
+    buffers->BindBuffers(0, &buffer_binding, 1);
+    cmd_buffer_->CmdBindPipeline(ambient_pipeline_.get());
+    cmd_buffer_->CmdBindDescriptorSets(
+        ambient_pipeline_.get(),
+        (const RDescriptorSet**)std::array<RDescriptorSet*, 2>{
+            buffers,
+            textures
+        }.data(), 2
+    );
+    cmd_buffer_->CmdSetScissor(0, 0, 1600, 900);
+    cmd_buffer_->CmdSetViewport(0, 0, 1600, 900);
+    cmd_buffer_->CmdBindVertexBuffer(quad_vertex_buffer_.get(), 0, 0);
+    cmd_buffer_->CmdBindIndexBuffer(quad_index_buffer_.get(), 0);
+
     cmd_buffer_->CmdDrawIndexed(6, 0, 0);
 }
 

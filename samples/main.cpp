@@ -135,11 +135,11 @@ int main(int argc, char** argv)
             );
 
             std::shared_ptr<eng::RSceneLight> light = std::make_shared<eng::RSceneLight>();
-            light->direction = eng::vec3f(0.0f, -1.0f, 1.0f);
+            light->direction = eng::vec3f(1.0f, -0.0f, 0.0f);
             light->color = eng::vec3f(1.0f, 1.0f, 1.0f);
 
             std::shared_ptr<eng::RSceneLight> light2 = std::make_shared<eng::RSceneLight>();
-            light2->direction = eng::vec3f(1.0f, 0.0f, 0.0f);
+            light2->direction = eng::vec3f(-1.0f, -0.0f, 0.0f);
             light2->color = eng::vec3f(0.0f, 0.0f, 1.0f);
 
             scene.scene_meshes.push_back(plane_instance);
@@ -147,6 +147,8 @@ int main(int argc, char** argv)
 
             scene.scene_lights.push_back(light);
             scene.scene_lights.push_back(light2);
+
+            scene.ambient_color = eng::vec3f(0.2f, 0.2f, 0.2f);
 
             plane_instance->scale = eng::vec3f(4.0f, 4.0f, 4.0f);
             eng::g_input_manager->SetMouseTracking(true);

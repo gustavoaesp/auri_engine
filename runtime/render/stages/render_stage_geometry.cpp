@@ -148,8 +148,6 @@ RStageGeometry::~RStageGeometry()
 void RStageGeometry::Render(RScene &scene)
 {
     ResetCounters();
-    uint32_t buffers_count = 0;
-    uint32_t textures_count = 0;
 
     if (scene.active_camera) {
         mtx4f view_proj = CreateViewMatrix(

@@ -18,6 +18,8 @@ struct RScene
     std::shared_ptr<RSceneCamera> active_camera;
 
     std::vector<std::shared_ptr<RSceneLight>> scene_lights;
+
+    vec3f ambient_color;
 };
 
 }
