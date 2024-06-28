@@ -3,6 +3,7 @@
 
 #include "scene/scene_mesh.hpp"
 #include "scene/scene_camera.hpp"
+#include "scene/scene_light.hpp"
 
 #include <memory>
 #include <vector>
@@ -15,6 +16,8 @@ struct RScene
     std::vector<std::shared_ptr<RSceneMesh>> scene_meshes;
 
     std::shared_ptr<RSceneCamera> active_camera;
+
+    std::vector<std::shared_ptr<RSceneLight>> scene_lights;
 };
 
 }

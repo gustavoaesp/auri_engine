@@ -21,7 +21,7 @@ class IRenderStage
 public:
     virtual ~IRenderStage() {}
 
-    virtual void Render(const RScene&) = 0;
+    virtual void Render(RScene&) = 0;
 
     RRenderPass *GetRenderPass() const { return render_pass_.get(); }
     RCommandBuffer *GetCommandBuffer() const { return cmd_buffer_.get(); }

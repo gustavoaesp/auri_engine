@@ -7,6 +7,8 @@ add_executable(sample main.cpp)
 target_link_libraries(sample pengine)
 
 set (GLSL_SHADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/dirlight.vert
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/dirlight.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vert.vert
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/frag.frag
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/main.vert

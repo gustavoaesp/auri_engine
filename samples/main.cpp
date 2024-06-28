@@ -164,9 +164,20 @@ int main(int argc, char** argv)
                 60.0f
             );
 
+            std::shared_ptr<eng::RSceneLight> light = std::make_shared<eng::RSceneLight>();
+            light->direction = eng::vec3f(0.0f, -1.0f, 1.0f);
+            light->color = eng::vec3f(1.0f, 1.0f, 1.0f);
+
+            std::shared_ptr<eng::RSceneLight> light2 = std::make_shared<eng::RSceneLight>();
+            light2->direction = eng::vec3f(1.0f, 0.0f, 0.0f);
+            light2->color = eng::vec3f(0.0f, 0.0f, 1.0f);
+
             scene.scene_meshes.push_back(plane_instance);
             scene.scene_meshes.push_back(mesh_instance);
             scene.scene_meshes.push_back(trees_instance);
+
+            scene.scene_lights.push_back(light);
+            scene.scene_lights.push_back(light2);
 
             mesh_instance->scale(0) = 0.8f;
 
@@ -191,11 +202,9 @@ int main(int argc, char** argv)
                     scene.active_camera->look_pos += diff_camera * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("down")) {
-                    //mesh_instance->position(2) -= 0.01f;
                     scene.active_camera->look_pos -= diff_camera * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("left")) {
-                    //mesh_instance->position(0) -= 0.01f;
                     scene.active_camera->look_pos += eng::vec3f(
                         -diff_camera(2),
                         0,
@@ -203,7 +212,6 @@ int main(int argc, char** argv)
                     ) * ((float) 0.016f / 4.0f);
                 }
                 if (eng::g_input_manager->GetState("right")) {
-                    //mesh_instance->position(0) += 0.01f;
                     scene.active_camera->look_pos -= eng::vec3f(
                         -diff_camera(2),
                         0,

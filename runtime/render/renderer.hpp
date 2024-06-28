@@ -5,6 +5,7 @@
 #include "managers/mesh_manager.hpp"
 #include "managers/texture_manager.hpp"
 #include "stages/render_stage_geometry.hpp"
+#include "stages/render_stage_lighting.hpp"
 
 namespace eng
 {
@@ -21,7 +22,7 @@ public:
     ~RRenderer();
 
     void BeginFrame();
-    void Render(const RScene&);
+    void Render(RScene&);
     void Present();
 
     IRenderBackend *GetBackend() const { return backend_.get(); }
@@ -30,6 +31,9 @@ private:
     std::unique_ptr<RSampler> main_sampler_;
 
     std::unique_ptr<RStageGeometry> geometry_stage_;
+    std::unique_ptr<RStageLighting> lighting_stage_;
+
+    std::unique_ptr<RFramebuffer> output_framebuffer_;
 };
 
 }

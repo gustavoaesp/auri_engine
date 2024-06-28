@@ -17,6 +17,10 @@ RRenderer::RRenderer(std::unique_ptr<IRenderBackend>&& backend):
     g_mesh_manager = std::make_unique<RMeshManager>(backend_.get());
 
     geometry_stage_ = std::make_unique<RStageGeometry>(backend_.get(), 1600, 900);
+    lighting_stage_ = std::make_unique<RStageLighting>(
+        backend_.get(),
+        geometry_stage_->GetGBuffer()
+    );
 }
 
 RRenderer::~RRenderer()
@@ -30,23 +34,23 @@ void RRenderer::BeginFrame()
     backend_->BeginRender();
 }
 
-void RRenderer::Render(const RScene& scene)
+void RRenderer::Render(RScene& scene)
 {
     geometry_stage_->Render(scene);
+    lighting_stage_->Render(scene);
 
     backend_->SubmitBuffers(
-        std::array<RCommandBuffer*, 1>{
-            geometry_stage_->GetCommandBuffer()
+        std::array<RCommandBuffer*, 2>{
+            geometry_stage_->GetCommandBuffer(),
+            lighting_stage_->GetCommandBuffer()
         }.data(),
-        1
+        2
     );
 }
 
 void RRenderer::Present()
 {
-    backend_->Present(geometry_stage_->GetGBuffer());
+    backend_->Present(lighting_stage_->GetFrame());
 }
-
-
 
 }

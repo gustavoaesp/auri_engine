@@ -164,7 +164,7 @@ RStageGeometry::~RStageGeometry()
 {
 }
 
-void RStageGeometry::Render(const RScene &scene)
+void RStageGeometry::Render(RScene &scene)
 {
     uint32_t buffers_count = 0;
     uint32_t textures_count = 0;

@@ -15,7 +15,7 @@ public:
     RStageGeometry(IRenderBackend *, uint32_t width, uint32_t height);
     ~RStageGeometry() override;
 
-    void Render(const RScene&) override;
+    void Render(RScene&) override;
 
     RFramebuffer *GetGBuffer() const { return g_buffer_.get(); }
 
