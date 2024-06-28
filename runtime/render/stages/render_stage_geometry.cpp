@@ -7,6 +7,9 @@ namespace eng
 {
 
 RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint32_t height):
+    IRenderStage(backend_ref, 0x4000,
+    RDescriptorLayoutBindingStageAccess::EShaderStageVertexBit,
+    RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit),
     backend_ref_(backend_ref)
 {
     RTexture *albedo = backend_ref->CreateImage2D(
@@ -74,28 +77,6 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
             RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit;
         texture_bindings[i].type = RDescriptorLayoutBindingType::kTextureSampler;
     }
-    desc_layout_buffers_ = std::unique_ptr<RDescriptorLayout>(
-        backend_ref->CreateDescriptorLayout(
-            buffer_bindings.data(), buffer_bindings.size()
-        )
-    );
-    desc_layout_textures_ = std::unique_ptr<RDescriptorLayout>(
-        backend_ref->CreateDescriptorLayout(
-            texture_bindings.data(), texture_bindings.size()
-        )
-    );
-    desc_pool_buffers_ = std::unique_ptr<RDescriptorPool>(
-        backend_ref->CreateDescriptorPool(
-            0x4000,
-            RDescriptorLayoutBindingType::kUniformBuffer
-        )
-    );
-    desc_pool_textures_ = std::unique_ptr<RDescriptorPool>(
-        backend_ref->CreateDescriptorPool(
-            0x4000,
-            RDescriptorLayoutBindingType::kTextureSampler
-        )
-    );
 
     cmd_pool_ = std::unique_ptr<RCommandPool>(
         backend_ref->CreateCommandPool()
@@ -137,8 +118,8 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
             RVertexType::kVertexPos3Nor3Tex2,
             RVertexType::kNoFormat,
             std::array<RDescriptorLayout*, 2>{
-                desc_layout_buffers_.get(),
-                desc_layout_textures_.get()
+                descriptor_layout_buffers_.get(),
+                descriptor_layout_textures_.get()
             }.data(),
             2
         )
@@ -166,6 +147,7 @@ RStageGeometry::~RStageGeometry()
 
 void RStageGeometry::Render(RScene &scene)
 {
+    ResetCounters();
     uint32_t buffers_count = 0;
     uint32_t textures_count = 0;
 
@@ -207,18 +189,7 @@ void RStageGeometry::Render(RScene &scene)
         );
         transform *= scene_mesh->rotation.toMatrix();
         transform *= CreateTranslateMatrix(scene_mesh->position);
-        RDescriptorSet *descriptor_set_buffers = nullptr;
-        if (buffers_count >= descriptor_sets_buffer_.size()) {
-            descriptor_sets_buffer_.push_back(
-                std::unique_ptr<RDescriptorSet>(
-                    desc_pool_buffers_->AllocateSet(desc_layout_buffers_.get())
-                )
-            );
-            descriptor_set_buffers = descriptor_sets_buffer_.back().get();
-        } else {
-            descriptor_set_buffers = descriptor_sets_buffer_[buffers_count].get();
-        }
-        buffers_count++;
+        RDescriptorSet *descriptor_set_buffers = NextSet(RDescriptorLayoutBindingType::kUniformBuffer);
 
         if (!scene_mesh->uniform_buffer_transform) {
             scene_mesh->uniform_buffer_transform = std::unique_ptr<RBuffer>(
@@ -249,19 +220,8 @@ void RStageGeometry::Render(RScene &scene)
             0, buffer_bindings.data(), buffer_bindings.size()
         );
         for (int i = 0; i < scene_mesh->mesh->GetSubmeshCount(); ++i) {
-            RDescriptorSet *descriptor_set_textures = nullptr;
             RSubmesh *submesh = scene_mesh->mesh->GetSubmesh(i);
-            if (textures_count >= descriptor_sets_texture_.size()) {
-                descriptor_sets_texture_.push_back(
-                    std::unique_ptr<RDescriptorSet>(
-                        desc_pool_textures_->AllocateSet(desc_layout_textures_.get())
-                    )
-                );
-                descriptor_set_textures = descriptor_sets_texture_.back().get();
-            } else {
-                descriptor_set_textures = descriptor_sets_texture_[textures_count].get();
-            }
-            textures_count++;
+            RDescriptorSet *descriptor_set_textures = NextSet(RDescriptorLayoutBindingType::kTextureSampler);
 
             RTextureSamplerBinding sampler_binding{
                 .texture = submesh->material.diffuse.get(),

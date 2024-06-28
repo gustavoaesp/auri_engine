@@ -28,15 +28,6 @@ private:
     std::unique_ptr<RShader> main_frag_;
     std::unique_ptr<RPipeline> main_pipeline_;
 
-    std::unique_ptr<RDescriptorLayout> desc_layout_buffers_;
-    std::unique_ptr<RDescriptorLayout> desc_layout_textures_;
-
-    std::unique_ptr<RDescriptorPool> desc_pool_buffers_;
-    std::unique_ptr<RDescriptorPool> desc_pool_textures_;
-
-    std::vector<std::unique_ptr<RDescriptorSet>> descriptor_sets_buffer_;
-    std::vector<std::unique_ptr<RDescriptorSet>> descriptor_sets_texture_;
-
     std::unique_ptr<RSampler> main_sampler_;
 
     std::unique_ptr<RBuffer> view_projection_uniform_;

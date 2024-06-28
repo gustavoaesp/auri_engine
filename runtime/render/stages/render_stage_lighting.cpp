@@ -16,6 +16,11 @@ uint32_t indices[6] = {
 };
 
 RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
+    IRenderStage(
+        backend, 0x4000,
+        RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit,
+        RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit
+    ),
     backend_ref_(backend), gbuffer_ref_(gbuffer)
 {
     RBlendState blend_state;
@@ -43,18 +48,6 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
             RDescriptorLayoutBindingStageAccess::EShaderStageFragmentBit;
         texture_bindings[i].type = RDescriptorLayoutBindingType::kTextureSampler;
     }
-    desc_layout_buffers_ = std::unique_ptr<RDescriptorLayout>(
-        backend->CreateDescriptorLayout(
-            buffer_bindings.data(),
-            buffer_bindings.size()
-        )
-    );
-    desc_layout_textures_ = std::unique_ptr<RDescriptorLayout>(
-        backend->CreateDescriptorLayout(
-            texture_bindings.data(),
-            texture_bindings.size()
-        )
-    );
 
     RTexture *output_texture = backend->CreateImage2D(
         1600, 900,
@@ -97,21 +90,9 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
             RVertexType::kVertexPos3Col4,
             RVertexType::kNoFormat,
             std::array<RDescriptorLayout*, 2>{
-                desc_layout_buffers_.get(),
-                desc_layout_textures_.get()
+                descriptor_layout_buffers_.get(),
+                descriptor_layout_textures_.get()
             }.data(), 2
-        )
-    );
-    desc_pool_buffers_ = std::unique_ptr<RDescriptorPool>(
-        backend->CreateDescriptorPool(
-            0x4000,
-            RDescriptorLayoutBindingType::kUniformBuffer
-        )
-    );
-    desc_pool_textures_ = std::unique_ptr<RDescriptorPool>(
-        backend->CreateDescriptorPool(
-            0x4000,
-            RDescriptorLayoutBindingType::kTextureSampler
         )
     );
 
@@ -146,6 +127,8 @@ RStageLighting::~RStageLighting()
 
 void RStageLighting::Render(RScene &scene)
 {
+    ResetCounters();
+
     vec4f clear_color(0.0f, 0.0f, 0.0f, 1.0f);
     cmd_buffer_->Reset();
     cmd_buffer_->BeginRecord();
@@ -158,30 +141,8 @@ void RStageLighting::Render(RScene &scene)
     uint32_t buffers_count = 0;
     uint32_t textures_count = 0;
     for (auto &light : scene.scene_lights) {
-        RDescriptorSet *descriptor_set_buffers = nullptr;
-        RDescriptorSet *descriptor_set_textures = nullptr;
-        if (buffers_count >= descriptor_sets_buffer_.size()) {
-            descriptor_sets_buffer_.push_back(
-                std::unique_ptr<RDescriptorSet>(
-                    desc_pool_buffers_->AllocateSet(desc_layout_buffers_.get())
-                )
-            );
-            descriptor_set_buffers = descriptor_sets_buffer_.back().get();
-        } else {
-            descriptor_set_buffers = descriptor_sets_buffer_[buffers_count].get();
-        }
-        buffers_count++;
-        if (textures_count >= descriptor_sets_texture_.size()) {
-            descriptor_sets_texture_.push_back(
-                std::unique_ptr<RDescriptorSet>(
-                    desc_pool_textures_->AllocateSet(desc_layout_textures_.get())
-                )
-            );
-            descriptor_set_textures = descriptor_sets_texture_.back().get();
-        } else {
-            descriptor_set_textures = descriptor_sets_texture_[textures_count].get();
-        }
-        textures_count++;
+        RDescriptorSet *descriptor_set_buffers = NextSet(RDescriptorLayoutBindingType::kUniformBuffer);
+        RDescriptorSet *descriptor_set_textures = NextSet(RDescriptorLayoutBindingType::kTextureSampler);
 
         std::array<RTextureSamplerBinding, 2> texture_bindings{};
         for (int i = 0; i < 2; ++i) {

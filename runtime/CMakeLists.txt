@@ -55,6 +55,7 @@ set(RENDER_SRC
     render/renderer.cpp
     render/scene/scene_mesh.cpp
     render/scene/scene_camera.cpp
+    render/stages/render_stage.cpp
     render/stages/render_stage_geometry.cpp
     render/stages/render_stage_lighting.cpp
 

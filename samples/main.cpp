@@ -13,16 +13,6 @@
 #include <input/input.hpp>
 #include <input/backends/glfw.hpp>
 
-eng::Vertex_NorTuv my_triangle[3] = {
-    {eng::vec3f( 0.0f, 1.0f, 0.0f), eng::vec3f(0.0f, 0.0f, -1.0f), eng::vec2f(0.5f, 1.0f)},
-    {eng::vec3f( 1.0f,-1.0f, 0.0f), eng::vec3f(0.0f, 0.0f, -1.0f), eng::vec2f(1.0f, 0.0f)},
-    {eng::vec3f(-1.0f,-1.0f, 0.0f), eng::vec3f(0.0f, 0.0f, -1.0f), eng::vec2f(0.0f, 0.0f)}
-};
-
-uint32_t my_triangle_indices[3] = {
-    0, 1, 2
-};
-
 eng::Vertex_NorTuv my_plane[4] = {
     {eng::vec3f(-1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(0.0f, 8.0f)},
     {eng::vec3f( 1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(8.0f, 8.0f)},
@@ -102,18 +92,8 @@ int main(int argc, char** argv)
             );
             eng::RMaterial material;
             material.diffuse = eng::g_texture_manager->Get("textures/texture.tex");
-            std::unique_ptr<eng::RSubmesh> submesh = std::make_unique<eng::RSubmesh>(
-                renderer->GetBackend(),
-                eng::RVertexType::kVertexPos3Nor3Tex2,
-                my_triangle, 3,
-                my_triangle_indices, 3,
-                std::move(material)
-            );
-            std::shared_ptr<eng::RMesh> my_mesh =
-                std::shared_ptr<eng::RMesh>(new eng::RMesh);
-            my_mesh->AddSubmesh(std::move(submesh));
-
             material.diffuse = eng::g_texture_manager->Get("textures/grass.tex");
+
             std::unique_ptr<eng::RSubmesh> plane_submesh = std::make_unique<eng::RSubmesh>(
                 renderer->GetBackend(),
                 eng::RVertexType::kVertexPos3Nor3Tex2,
@@ -125,22 +105,12 @@ int main(int argc, char** argv)
             std::shared_ptr<eng::RMesh> plane_mesh(new eng::RMesh);
             plane_mesh->AddSubmesh(std::move(plane_submesh));
 
-            eng::g_mesh_manager->Add("my_mesh", std::move(my_mesh));
             eng::g_mesh_manager->Add("my_plane", std::move(plane_mesh));
 
             eng::vec3f mesh_pos(0.0f, 0.0f, 0.0f);
             eng::Quaternion mesh_rot(0, 0, 0, 0);
             eng::vec3f mesh_scale(1.0f, 1.0f, 1.0f);
 
-            std::shared_ptr<eng::RSceneMesh> mesh_instance =
-                std::make_shared<eng::RSceneMesh>(
-                    "my_mesh",
-                    mesh_pos,
-                    mesh_rot,
-                    mesh_scale
-                );
-
-                mesh_instance->position(0) = -4.0f;
             std::shared_ptr<eng::RSceneMesh> plane_instance =
                 std::make_shared<eng::RSceneMesh>(
                     "my_plane",
@@ -173,13 +143,10 @@ int main(int argc, char** argv)
             light2->color = eng::vec3f(0.0f, 0.0f, 1.0f);
 
             scene.scene_meshes.push_back(plane_instance);
-            scene.scene_meshes.push_back(mesh_instance);
             scene.scene_meshes.push_back(trees_instance);
 
             scene.scene_lights.push_back(light);
             scene.scene_lights.push_back(light2);
-
-            mesh_instance->scale(0) = 0.8f;
 
             plane_instance->scale = eng::vec3f(4.0f, 4.0f, 4.0f);
             eng::g_input_manager->SetMouseTracking(true);
@@ -191,8 +158,8 @@ int main(int argc, char** argv)
                 renderer->Render(scene);
                 renderer->Present();
 
-                mesh_instance->rotation.setAxisRotation(eng::vec3f(0.0f,0.0f, 1.0f), angle);
                 angle += 0.01f;
+                trees_instance->rotation.setAxisRotation(eng::vec3f(0.0f, 1.0f, 0.0f), angle);
 
                 eng::vec3f diff_camera = scene.active_camera->look_pos - scene.active_camera->position;
                 diff_camera(1) = 0;
