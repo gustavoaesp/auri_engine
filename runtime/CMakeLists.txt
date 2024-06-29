@@ -77,10 +77,16 @@ set(RENDER_INCLUDES
     third_party/imgui/backends
 )
 
+set(CORE_SRC
+    core/game_mode.cpp
+    core/main_loop.cpp
+)
+
 add_library(pengine
     ${RENDER_BACKEND_SRC}
     ${RENDER_SRC}
     ${INPUT_SRC}
+    ${CORE_SRC}
 )
 target_link_libraries(pengine vulkan)
 target_link_libraries(pengine glfw)

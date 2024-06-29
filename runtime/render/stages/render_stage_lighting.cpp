@@ -1,5 +1,7 @@
-#include "stages/render_stage_lighting.hpp"
+#include "core/global_context.hpp"
+
 #include "scene/scene.hpp"
+#include "stages/render_stage_lighting.hpp"
 #include "vertex.hpp"
 
 #include "renderer.hpp"
@@ -103,8 +105,8 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
             render_pass_.get(),
             &blend_state, nullptr,
             (const RShader**)std::array<RShader*, 2>{
-                g_shader_list->Get("shaders/ambientlight.frag.spv"),
-                g_shader_list->Get("shaders/light.vert.spv")
+                g_context->shader_list->Get("shaders/ambientlight.frag.spv"),
+                g_context->shader_list->Get("shaders/light.vert.spv")
             }.data(),
             2,
             RVertexType::kVertexPos3Col4,

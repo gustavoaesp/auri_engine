@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include (compile_glsl)
 
-add_executable(sample main.cpp)
+add_executable(sample main.cpp game_mode.cpp)
 target_link_libraries(sample pengine)
 
 set (GLSL_SHADERS

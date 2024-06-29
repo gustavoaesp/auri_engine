@@ -95,6 +95,8 @@ RDescriptorSet *IRenderStage::NextSet(RDescriptorLayoutBindingType descriptor_se
             descriptor_layout_textures_.get()
         );
     }
+
+    return nullptr;
 }
 
 void IRenderStage::ResetCounters()

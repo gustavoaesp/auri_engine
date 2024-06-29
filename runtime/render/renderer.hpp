@@ -11,10 +11,6 @@
 namespace eng
 {
 
-extern std::unique_ptr<RTextureManager> g_texture_manager;
-extern std::unique_ptr<RMeshManager> g_mesh_manager;
-extern std::unique_ptr<RShaderList> g_shader_list;
-
 class RScene;
 
 class RRenderer

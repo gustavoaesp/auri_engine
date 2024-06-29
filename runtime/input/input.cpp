@@ -9,8 +9,6 @@
 namespace eng
 {
 
-std::unique_ptr<InputManager> g_input_manager;
-
 InputManager::InputManager(std::unique_ptr<IInputBackend>&& backend, const std::string& input_map):
 	backend_(std::move(backend))
 {

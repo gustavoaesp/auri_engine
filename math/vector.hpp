@@ -84,7 +84,7 @@ public:
 		res *= a;
 		return res;
 	}
-	Vector<T, ndimensions> operator * (T a) const
+	Vector<T, ndimensions> operator * (const T &a) const
 	{
 		Vector<T, ndimensions> res(*this);
 		res *= a;
@@ -98,7 +98,7 @@ public:
 		return res;
 	}
 	
-	Vector<T, ndimensions> operator *(const Matrix<T, ndimensions>& m)
+	Vector<T, ndimensions> operator *(const Matrix<T, ndimensions>& m) const
 	{
 		Vector<T, ndimensions> resp;
 		for (int x = 0; x < ndimensions; x++)

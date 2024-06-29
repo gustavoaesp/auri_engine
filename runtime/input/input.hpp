@@ -30,8 +30,6 @@ private:
 	std::unique_ptr<IInputBackend> backend_;
 };
 
-extern std::unique_ptr<InputManager> g_input_manager;
-
 }
 
 #endif

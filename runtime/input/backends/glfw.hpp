@@ -2,6 +2,7 @@
 
 #include "input/backend.hpp"
 
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
 namespace eng

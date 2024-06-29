@@ -1,3 +1,5 @@
+#include "core/global_context.hpp"
+
 #include "render/mesh_file.hpp"
 #include "render/mesh.hpp"
 #include "render/renderer.hpp"
@@ -29,7 +31,7 @@ RMesh *RFileMeshRead(IRenderBackend *backend, const char *filename)
         std::vector<Vertex_NorTuv> vertices(submesh.num_vertices);
         std::vector<uint32_t> indices(submesh.num_indices);
         RMaterial material;
-        material.diffuse = g_texture_manager->Get(submesh.material.diffuse_tex);
+        material.diffuse = g_context->texture_manager->Get(submesh.material.diffuse_tex);
 
         infile.read((char*)vertices.data(), submesh.num_vertices * sizeof(Vertex_NorTuv));
         infile.read((char*)indices.data(), submesh.num_indices * sizeof(uint32_t));

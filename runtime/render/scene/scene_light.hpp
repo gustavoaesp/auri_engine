@@ -14,6 +14,8 @@ enum class RSceneLightType
     kLightDirectional
 };
 
+class RBuffer;
+
 struct RSceneLight
 {
     vec3f direction;
