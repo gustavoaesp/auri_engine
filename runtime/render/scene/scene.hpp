@@ -4,6 +4,7 @@
 #include "scene/scene_mesh.hpp"
 #include "scene/scene_camera.hpp"
 #include "scene/scene_light.hpp"
+#include "scene/scene_skinned_mesh.hpp"
 
 #include <memory>
 #include <vector>
@@ -14,6 +15,7 @@ namespace eng
 struct RScene
 {
     std::vector<std::shared_ptr<RSceneMesh>> scene_meshes;
+    std::vector<std::shared_ptr<RSceneSkinnedMesh>> scene_skinned_meshes;
 
     std::shared_ptr<RSceneCamera> active_camera;
 

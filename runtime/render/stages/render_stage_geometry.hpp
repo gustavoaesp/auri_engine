@@ -24,9 +24,8 @@ private:
     std::unique_ptr<RFramebuffer> g_buffer_;
 
     IRenderBackend *backend_ref_;
-    std::unique_ptr<RShader> main_vert_;
-    std::unique_ptr<RShader> main_frag_;
     std::unique_ptr<RPipeline> main_pipeline_;
+    std::unique_ptr<RPipeline> main_skinned_pipeline_;
 
     std::unique_ptr<RSampler> main_sampler_;
 

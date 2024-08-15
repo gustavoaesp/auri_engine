@@ -1,8 +1,8 @@
 #include "core/global_context.hpp"
 
-#include "render/mesh_file.hpp"
-#include "render/mesh.hpp"
-#include "render/renderer.hpp"
+#include "mesh_file.hpp"
+#include "mesh.hpp"
+#include "renderer.hpp"
 
 #include <fstream>
 #include <string>
@@ -12,7 +12,7 @@
 namespace eng
 {
 
-RMesh *RFileMeshRead(IRenderBackend *backend, const char *filename)
+RMesh *RFileMeshRead(const char *filename)
 {
     std::ifstream infile(filename, std::ios::in);
     eng::RFileMesh file_header;
@@ -37,7 +37,7 @@ RMesh *RFileMeshRead(IRenderBackend *backend, const char *filename)
         infile.read((char*)indices.data(), submesh.num_indices * sizeof(uint32_t));
 
         mesh->AddSubmesh(std::make_unique<RSubmesh>(
-            backend, RVertexType::kVertexPos3Nor3Tex2,
+            g_context->renderer->GetBackend(), RVertexType::kVertexPos3Nor3Tex2,
             vertices.data(), vertices.size(),
             indices.data(), indices.size(),
             std::move(material)

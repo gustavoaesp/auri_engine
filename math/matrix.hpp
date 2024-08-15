@@ -65,7 +65,7 @@ public:
 		return res;
 	}
 
-	Matrix<T, dim> operator * (const Matrix<T, dim>& m)
+	Matrix<T, dim> operator * (const Matrix<T, dim>& m) const
 	{
 		Matrix<T, dim> res(*this);
 		res *= m;
@@ -229,6 +229,16 @@ static mtx4f inverse(const mtx4f& m)
 	}
 
 	return inv;
+}
+
+static mtx4f transpose(const mtx4f &in)
+{
+    return mtx4f(
+        in(0, 0), in(1, 0), in(2, 0), in(3, 0),
+        in(0, 1), in(1, 1), in(2, 1), in(3, 1),
+        in(0, 2), in(1, 2), in(2, 2), in(3, 2),
+        in(0, 3), in(1, 3), in(2, 3), in(3, 3)
+    );
 }
 
 }

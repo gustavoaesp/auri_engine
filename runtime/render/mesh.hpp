@@ -15,6 +15,7 @@ namespace eng
 struct RMaterial
 {
     std::shared_ptr<RTexture> diffuse;
+    std::string diffuse_filename;
     std::shared_ptr<RPipeline> pipeline; //can be null
 };
 

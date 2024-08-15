@@ -15,8 +15,6 @@ class RMeshManager : public TResourceManager<RMesh>
 {
 public:
     RMeshManager(IRenderBackend*);
-private:
-    IRenderBackend *backend_ref_;
 
 protected:
     RMesh *Load(const char*) override;

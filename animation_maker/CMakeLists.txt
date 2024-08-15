@@ -3,8 +3,12 @@ cmake_minimum_required(VERSION 3.0)
 list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include (compile_glsl)
 
-add_executable(sample main.cpp game_mode.cpp)
-target_link_libraries(sample pengine)
+add_executable(animation_maker
+    main.cpp
+    game_mode.cpp
+)
+target_link_libraries(animation_maker pengine)
+target_link_libraries(animation_maker assimp)
 
 set (GLSL_SHADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/light.vert
@@ -19,4 +23,4 @@ set (GLSL_SHADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/presentation.frag
 )
 
-target_glsl_shaders(sample PUBLIC ${GLSL_SHADERS})
+target_glsl_shaders(animation_maker PUBLIC ${GLSL_SHADERS})

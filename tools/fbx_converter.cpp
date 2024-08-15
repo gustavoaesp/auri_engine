@@ -6,8 +6,14 @@
 #include <vector>
 #include <string.h>
 
+#include <core/game_mode.hpp>
 #include <render/mesh_file.hpp>
 #include <render/vertex.hpp>
+
+namespace eng
+{
+    std::unique_ptr<CGameMode> g_game_mode;
+}
 
 struct Material
 {
@@ -57,18 +63,40 @@ ofbx::IScene* loadScene(const std::string& filename)
 		//ofbx::LoadFlags::IGNORE_LIGHTS |
 //		ofbx::LoadFlags::IGNORE_TEXTURES |
 		ofbx::LoadFlags::IGNORE_SKIN |
-		ofbx::LoadFlags::IGNORE_BONES |
+//		ofbx::LoadFlags::IGNORE_BONES |
 		ofbx::LoadFlags::IGNORE_PIVOTS |
 //		ofbx::LoadFlags::IGNORE_MATERIALS |
 		ofbx::LoadFlags::IGNORE_POSES |
-		ofbx::LoadFlags::IGNORE_VIDEOS |
-		ofbx::LoadFlags::IGNORE_LIMBS |
+		ofbx::LoadFlags::IGNORE_VIDEOS;
+//		ofbx::LoadFlags::IGNORE_LIMBS |
 //		ofbx::LoadFlags::IGNORE_MESHES |
-		ofbx::LoadFlags::IGNORE_ANIMATIONS;
+//		ofbx::LoadFlags::IGNORE_ANIMATIONS;
 
     ofbx::IScene* scene = ofbx::load(contents.data(), contents.size(), (ofbx::u16) flags);
 
     return scene;
+}
+
+
+void IterateLimb(const ofbx::Object &obj, int level)
+{
+    print_spaces(level + 1);
+    std::cout << "* Name :" << obj.name << "\n";
+}
+
+void IterateAnimationCurve(const ofbx::Object &obj, int level)
+{
+    const ofbx::AnimationCurve &anim = (const ofbx::AnimationCurve&)obj;
+    print_spaces(level + 1);
+    std::cout << "* key_count: " << anim.getKeyCount() << "\n";
+}
+
+void IterateAnimationCurveNode(const ofbx::Object &obj, int level)
+{
+    const ofbx::AnimationCurveNode &anim_node = (const ofbx::AnimationCurveNode &)obj;
+
+    print_spaces(level + 1);
+    std::cout << "* Name: " << obj.name <<"\n";
 }
 
 void IterateTexture(const ofbx::Object& obj, int level)
@@ -210,6 +238,12 @@ void IterateObj(const ofbx::Object& obj, int level)
     }
     else if (obj.getType() == ofbx::Object::Type::TEXTURE) {
         IterateTexture(obj, level);
+    } else if (obj.getType() == ofbx::Object::Type::LIMB_NODE) {
+        IterateLimb(obj, level);
+    } else if (obj.getType() == ofbx::Object::Type::ANIMATION_CURVE) {
+        IterateAnimationCurve(obj, level);
+    } else if (obj.getType() == ofbx::Object::Type::ANIMATION_CURVE_NODE) {
+        IterateAnimationCurveNode(obj, level);
     }
 
     int i = 0;
@@ -264,7 +298,7 @@ int main(int argc, char** argv)
     ofbx::IScene* scene = loadScene(argv[1]);
     IterateScene(*scene);
 
-    SerializeSubmeshes("out.c3d");
+    //SerializeSubmeshes("out.c3d");
 
     return 0;
 }

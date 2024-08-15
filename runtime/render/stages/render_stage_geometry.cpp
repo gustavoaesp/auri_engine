@@ -1,5 +1,8 @@
+#include "core/global_context.hpp"
+
 #include "stages/render_stage_geometry.hpp"
 #include "scene/scene.hpp"
+#include "managers/shader_list.hpp"
 
 #include "transform/matrix.hpp"
 
@@ -85,19 +88,6 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
         cmd_pool_->CreateCommandBuffer(true)
     );
 
-    main_vert_ = std::unique_ptr<RShader>(
-        backend_ref->CreateShader(
-            "shaders/main.vert.spv",
-            RShaderPipelineBind::kShaderVertex
-        )
-    );
-    main_frag_ = std::unique_ptr<RShader>(
-        backend_ref->CreateShader(
-            "shaders/main.frag.spv",
-            RShaderPipelineBind::kShaderFragment
-        )
-    );
-
     RBlendState blend_state{};
     blend_state.num_blend_attachments = 2;
     RDepthStencilState depth_state{};
@@ -111,8 +101,8 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
             &blend_state,
             &depth_state,
             (const RShader**)std::array<RShader*, 2>{
-                main_vert_.get(),
-                main_frag_.get()
+                g_context->shader_list->Get("shaders/main.vert.spv"),
+                g_context->shader_list->Get("shaders/main.frag.spv")
             }.data(),
             2,
             RVertexType::kVertexPos3Nor3Tex2,
@@ -122,6 +112,23 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
                 descriptor_layout_textures_.get()
             }.data(),
             2
+        )
+    );
+    main_skinned_pipeline_ = std::unique_ptr<RPipeline>(
+        backend_ref->CreatePipeline(
+            render_pass_.get(),
+            &blend_state,
+            &depth_state,
+            (const RShader**)std::array<RShader*, 2>{
+                g_context->shader_list->Get("shaders/main_skinned.vert.spv"),
+                g_context->shader_list->Get("shaders/main.frag.spv")
+            }.data(), 2,
+            RVertexType::kVertexPos3Nor3Tex2_Skinned,
+            RVertexType::kNoFormat,
+            std::array<RDescriptorLayout*, 2> {
+                descriptor_layout_buffers_.get(),
+                descriptor_layout_textures_.get()
+            }.data(), 2
         )
     );
 
@@ -229,8 +236,8 @@ void RStageGeometry::Render(RScene &scene)
                 0, &sampler_binding, 1
             );
             cmd_buffer_->CmdBindPipeline(main_pipeline_.get());
-            cmd_buffer_->CmdSetScissor(0,0, 1600, 900);
-            cmd_buffer_->CmdSetViewport(0, 0, 1600, 900);
+            cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+            cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
             cmd_buffer_->CmdBindDescriptorSets(
                 main_pipeline_.get(),
                 (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
@@ -249,6 +256,102 @@ void RStageGeometry::Render(RScene &scene)
             );
             cmd_buffer_->CmdDrawIndexed(
                 submesh->indices_count,
+                0, 0
+            );
+        }
+    }
+
+    for (const auto &skinned_mesh : scene.scene_skinned_meshes) {
+        mtx4f transform = CreateScaleMatrix(
+            skinned_mesh->scale(0),
+            skinned_mesh->scale(1),
+            skinned_mesh->scale(2)
+        );
+        transform *= skinned_mesh->rotation.toMatrix();
+        transform *= CreateTranslateMatrix(skinned_mesh->position);
+        RDescriptorSet *descriptor_set_buffers = NextSet(RDescriptorLayoutBindingType::kUniformBuffer);
+
+        if (!skinned_mesh->uniform_buffer_transform) {
+            skinned_mesh->uniform_buffer_transform = std::unique_ptr<RBuffer>(
+                backend_ref_->CreateBuffer(RBufferUsage::kUniform,
+                sizeof(mtx4f), &transform)
+            );
+        } else {
+            backend_ref_->UpdateBuffer(
+                skinned_mesh->uniform_buffer_transform.get(),
+                &transform,
+                0, sizeof(mtx4f)
+            );
+        }
+
+        if (!skinned_mesh->uniform_bone_matrices) {
+            skinned_mesh->uniform_bone_matrices = std::unique_ptr<RBuffer>(
+                backend_ref_->CreateBuffer(RBufferUsage::kUniform,
+                sizeof(mtx4f) * 128,
+                skinned_mesh->bones.data()
+                )
+            );
+        } else {
+            backend_ref_->UpdateBuffer(
+                skinned_mesh->uniform_bone_matrices.get(),
+                skinned_mesh->bones.data(), 0,
+                sizeof(mtx4f) * 128
+            );
+        }
+
+        std::array<RBufferBinding, 3> buffer_bindings = {
+            RBufferBinding{
+                .buffer = view_projection_uniform_.get(),
+                .start_offset = 0,
+                .size = sizeof(mtx4f)
+            },
+            RBufferBinding{
+                .buffer = skinned_mesh->uniform_buffer_transform.get(),
+                .start_offset = 0,
+                .size = sizeof(mtx4f)
+            },
+            RBufferBinding{
+                .buffer = skinned_mesh->uniform_bone_matrices.get(),
+                .start_offset = 0,
+                .size = (uint32_t)(sizeof(mtx4f) * skinned_mesh->bones.size())
+            }
+        };
+        descriptor_set_buffers->BindBuffers(
+            0, buffer_bindings.data(), buffer_bindings.size()
+        );
+
+        for (int i = 0; i < skinned_mesh->mesh->GetSubmeshCount(); ++i) {
+            //if (i >= skinned_mesh->mesh->GetSubmeshCount() - 1) continue;
+            RSkinnedSubmesh *submesh = skinned_mesh->mesh->GetSubmesh(i);
+            RDescriptorSet *descriptor_set_textures = NextSet(RDescriptorLayoutBindingType::kTextureSampler);
+
+            RTextureSamplerBinding sampler_binding{
+                .texture = submesh->material.diffuse.get(),
+                .sampler = main_sampler_.get()
+            };
+            descriptor_set_textures->BindTextures(
+                0, &sampler_binding, 1
+            );
+            cmd_buffer_->CmdBindPipeline(main_skinned_pipeline_.get());
+            cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+            cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
+            cmd_buffer_->CmdBindDescriptorSets(
+                main_pipeline_.get(),
+                (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
+                    descriptor_set_buffers,
+                    descriptor_set_textures
+                }.data(),
+                2
+            );
+            cmd_buffer_->CmdBindVertexBuffer(
+                submesh->vertex_buffer.get(),
+                0, 0
+            );
+            cmd_buffer_->CmdBindIndexBuffer(
+                submesh->index_buffer.get(), 0
+            );
+            cmd_buffer_->CmdDrawIndexed(
+                submesh->indices.size(),
                 0, 0
             );
         }

@@ -16,6 +16,8 @@ IRenderStage::IRenderStage(
     descriptor_set_counter_buffers_(0),
     descriptor_set_counter_textures_(0)
 {
+    descriptor_sets_buffers_.reserve(pool_size);
+    descriptor_sets_textures_.reserve(pool_size);
     std::array<RDescriptorLayoutBinding, 4> buffer_bindings;
     std::array<RDescriptorLayoutBinding, 8> texture_bindings;
     for (int i = 0; i < buffer_bindings.size(); ++i) {

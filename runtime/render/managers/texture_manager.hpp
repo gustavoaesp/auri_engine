@@ -14,8 +14,6 @@ public:
     RTextureManager(IRenderBackend *);
 protected:
     RTexture *Load(const char*) override;
-
-    IRenderBackend *backend_ref_;
 };
 
 }

@@ -23,6 +23,8 @@ private:
     std::shared_ptr<eng::RSceneMesh> tree_;
     std::shared_ptr<eng::RSceneMesh> plane_;
 
+    std::shared_ptr<eng::RSceneSkinnedMesh> skinned_;
+
     std::shared_ptr<eng::RScene> scene_;
 };
 

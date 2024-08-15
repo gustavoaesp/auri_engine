@@ -16,7 +16,11 @@ RRenderer::RRenderer(std::unique_ptr<IRenderBackend>&& backend):
     g_context->mesh_manager = std::make_unique<RMeshManager>(backend_.get());
     g_context->shader_list = std::make_unique<RShaderList>(backend_.get());
 
-    geometry_stage_ = std::make_unique<RStageGeometry>(backend_.get(), 1600, 900);
+    geometry_stage_ = std::make_unique<RStageGeometry>(
+        backend_.get(),
+        g_context->frame_width,
+        g_context->frame_height
+    );
     lighting_stage_ = std::make_unique<RStageLighting>(
         backend_.get(),
         geometry_stage_->GetGBuffer()

@@ -27,6 +27,7 @@ CMainLoop::~CMainLoop()
 
 void CMainLoop::Init()
 {
+    uint32_t w = 1600, h = 900;
     VkSurfaceKHR win_surface;
     if (!glfwInit()) {
         std::cerr << "Error initializing glfw\n";
@@ -38,9 +39,10 @@ void CMainLoop::Init()
     std::unique_ptr<eng::VulkanInstance> vk_instance;
     vk_instance = std::make_unique<eng::VulkanInstance>(
         std::vector<const char*>{},
-        std::vector<const char*>{"VK_LAYER_KHRONOS_validation"}
+        //std::vector<const char*>{"VK_LAYER_KHRONOS_validation"}
+        std::vector<const char*>{}
     );
-    window_ = glfwCreateWindow(1600, 900, "Test", nullptr, nullptr);
+    window_ = glfwCreateWindow(w, h, "Test", nullptr, nullptr);
     glfwCreateWindowSurface(vk_instance->get(), window_, nullptr, &win_surface);
     std::unique_ptr<eng::VulkanRenderBackend> backend = std::make_unique<eng::VulkanRenderBackend>(
         std::move(vk_instance),
@@ -49,6 +51,8 @@ void CMainLoop::Init()
     );
 
     g_context = std::make_unique<GlobalContext>();
+    g_context->frame_width = w;
+    g_context->frame_height = h;
     g_context->input_manager = std::make_unique<eng::InputManager>(
         std::make_unique<eng::GLFWInput>(window_),
         "input.json"
@@ -71,9 +75,9 @@ int CMainLoop::Run()
         if (g_context->active_scene) {
             g_context->renderer->Render(*g_context->active_scene);
         }
-        g_context->renderer->Present();
-
         g_game_mode->Tick(0.016f);
+
+        g_context->renderer->Present();
     }
 
     return 0;

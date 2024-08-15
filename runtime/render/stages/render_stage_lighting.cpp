@@ -54,8 +54,8 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
     }
 
     RTexture *output_texture = backend->CreateImage2D(
-        1600, 900,
-        EFormat::kFormat_R8G8B8A8_UNORM
+        g_context->frame_width, g_context->frame_height,
+        EFormat::kFormat_R16G16B16A16_FLOAT
     );
 
     RRenderPassAttachment output_attachment;
@@ -235,8 +235,8 @@ void RStageLighting::ProcessDirectionalLight(
         }.data(),
         2
     );
-    cmd_buffer_->CmdSetScissor(0, 0, 1600, 900);
-    cmd_buffer_->CmdSetViewport(0, 0, 1600, 900);
+    cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+    cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
     cmd_buffer_->CmdBindVertexBuffer(quad_vertex_buffer_.get(), 0, 0);
     cmd_buffer_->CmdBindIndexBuffer(quad_index_buffer_.get(), 0);
     cmd_buffer_->CmdDrawIndexed(6, 0, 0);
@@ -266,8 +266,8 @@ void RStageLighting::ProcessAmbientLight(
             textures
         }.data(), 2
     );
-    cmd_buffer_->CmdSetScissor(0, 0, 1600, 900);
-    cmd_buffer_->CmdSetViewport(0, 0, 1600, 900);
+    cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+    cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
     cmd_buffer_->CmdBindVertexBuffer(quad_vertex_buffer_.get(), 0, 0);
     cmd_buffer_->CmdBindIndexBuffer(quad_index_buffer_.get(), 0);
 

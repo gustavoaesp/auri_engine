@@ -45,6 +45,7 @@ if (BUILD_VULKAN)
 endif()
 
 set(RENDER_SRC
+    render/anim_mesh_file.cpp
     render/transform/matrix.cpp
     render/transform/vector.cpp
     render/mesh.cpp
@@ -52,9 +53,12 @@ set(RENDER_SRC
     render/managers/mesh_manager.cpp
     render/managers/texture_manager.cpp
     render/mesh.cpp
+    render/skinned_mesh.cpp
+    render/skinned_animation.cpp
     render/mesh_file.cpp
     render/renderer.cpp
     render/scene/scene_mesh.cpp
+    render/scene/scene_skinned_mesh.cpp
     render/scene/scene_camera.cpp
     render/stages/render_stage.cpp
     render/stages/render_stage_geometry.cpp
@@ -90,6 +94,8 @@ add_library(pengine
 )
 target_link_libraries(pengine vulkan)
 target_link_libraries(pengine glfw)
+target_link_libraries(pengine assimp)
+target_include_directories(pengine PUBLIC ${CMAKE_SOURCE_DIR}/assimp/include)
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(pengine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/render)
 target_include_directories(pengine PUBLIC ${RENDER_BACKEND_INCLUDE_DIRS})

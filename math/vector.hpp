@@ -159,6 +159,14 @@ public:
         return dot;
     }
 
+	static Vector<T, ndimensions> Lerp(
+		const Vector<T, ndimensions>& a,
+		const Vector<T, ndimensions>& b,
+		float t)
+	{
+		return a * (1.0f - t) + b * t;
+	}
+
 private:
 	std::array<T, ndimensions> elem_;
 };

@@ -28,7 +28,7 @@ struct RFileSubmesh
     uint32_t num_indices;
 };
 
-class RMesh *RFileMeshRead(IRenderBackend*, const char *filename);
+class RMesh *RFileMeshRead(const char *filename);
 
 }
 

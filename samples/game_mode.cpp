@@ -5,6 +5,11 @@
 #include <render/managers/texture_manager.hpp>
 #include <render/managers/mesh_manager.hpp>
 #include <render/renderer.hpp>
+#include <render/transform/matrix.hpp>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 static eng::Vertex_NorTuv my_plane[4] = {
     {eng::vec3f(-1.0f, 0.0f, 1.0f), eng::vec3f(0.0f, 1.0f, 0.0f), eng::vec2f(0.0f, 8.0f)},
@@ -30,7 +35,7 @@ static void CameraSpheric(eng::RSceneCamera *cam, const eng::vec2f &mouse_surfac
         vangle = -M_PI / 2;
     }
 
-    float length = 3.0f;
+    float length = 4.0f;
     cam->position(1) = sin(vangle);
     cam->position(0) = cos(hangle) * cos(vangle);
     cam->position(2) = sin(hangle) * cos(vangle);
@@ -39,12 +44,32 @@ static void CameraSpheric(eng::RSceneCamera *cam, const eng::vec2f &mouse_surfac
     cam->position += cam->look_pos;
 }
 
-
-
 int MyGameMode::Init()
 {
     int ret = CGameMode::Init();
     if (ret) { return ret; }
+
+    Assimp::Importer importer;
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    const aiScene *ai_scene = importer.ReadFile(
+        //"anim2.fbx",
+        "link.gltf",
+        //"huesitos.fbx",
+        //"test.gltf",
+        //"jog.fbx",
+        aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_PopulateArmatureData
+    );
+
+    std::shared_ptr<eng::RSkinnedMesh> skinned_mesh_base = std::make_shared<eng::RSkinnedMesh>(
+        ai_scene
+    );
+    std::shared_ptr<eng::RSkinnedAnimation> skinned_animation = std::make_shared<eng::RSkinnedAnimation>(
+        skinned_mesh_base.get(),
+        ai_scene->mAnimations[0]
+    );
 
     scene_ = std::make_shared<eng::RScene>();
     eng::g_context->active_scene = scene_;
@@ -81,10 +106,19 @@ int MyGameMode::Init()
     tree_ =
         std::make_shared<eng::RSceneMesh>(
             "out.c3d",
-            eng::vec3f(0.0f, 0.0f, 0.0f),
+            eng::vec3f(2.0f, 0.0f, 2.0f),
             eng::Quaternion(0, 0, 0, 0),
             eng::vec3f(0.2f, 0.2f, 0.2f)
         );
+
+    skinned_ = std::make_shared<eng::RSceneSkinnedMesh>(
+        skinned_mesh_base,
+        skinned_animation,
+        eng::vec3f(0.0f, 0.0f, 0.0f),
+        eng::Quaternion(0, 0, 0, 0),
+        eng::vec3f(1.0f, 1.0f, 1.0f)
+        //eng::vec3f(0.001f,0.001f,0.001f)
+    );
 
     scene_->active_camera = std::make_unique<eng::RSceneCamera>(
         eng::vec3f(1.0f, 1.0f, -1.0f),
@@ -104,10 +138,12 @@ int MyGameMode::Init()
     scene_->scene_meshes.push_back(plane_);
     scene_->scene_meshes.push_back(tree_);
 
+    scene_->scene_skinned_meshes.push_back(skinned_);
+
     scene_->scene_lights.push_back(light);
     scene_->scene_lights.push_back(light2);
 
-    scene_->ambient_color = eng::vec3f(0.2f, 0.2f, 0.2f);
+    scene_->ambient_color = eng::vec3f(0.4f, 0.4f, 0.4f);
 
     plane_->scale = eng::vec3f(4.0f, 4.0f, 4.0f);
 
@@ -118,10 +154,11 @@ int MyGameMode::Init()
 
 void MyGameMode::Tick(float dt)
 {
-
     eng::vec3f diff_camera = scene_->active_camera->look_pos - scene_->active_camera->position;
     diff_camera(1) = 0;
     diff_camera = diff_camera.unit();
+
+    skinned_->Tick(0.016f);
 
     if (eng::g_context->input_manager->GetState("up")) {
         scene_->active_camera->look_pos += diff_camera * ((float) 0.016f / 4.0f);

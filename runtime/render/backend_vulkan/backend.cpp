@@ -242,6 +242,7 @@ void VulkanRenderBackend::InitializeGUI()
 
 void VulkanRenderBackend::BeginFrame()
 {
+    //vulkan_device_->WaitIdle();
     if (gui_initialized_) {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
