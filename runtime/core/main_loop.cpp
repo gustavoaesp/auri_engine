@@ -39,8 +39,8 @@ void CMainLoop::Init()
     std::unique_ptr<eng::VulkanInstance> vk_instance;
     vk_instance = std::make_unique<eng::VulkanInstance>(
         std::vector<const char*>{},
-        //std::vector<const char*>{"VK_LAYER_KHRONOS_validation"}
-        std::vector<const char*>{}
+        std::vector<const char*>{"VK_LAYER_KHRONOS_validation"}
+        //std::vector<const char*>{}
     );
     window_ = glfwCreateWindow(w, h, "Test", nullptr, nullptr);
     glfwCreateWindowSurface(vk_instance->get(), window_, nullptr, &win_surface);

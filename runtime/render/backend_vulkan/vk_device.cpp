@@ -2,6 +2,7 @@
 #include "backend_vulkan/vk_swapchain.hpp"
 
 #include <array>
+#include <iostream>
 #include <optional>
 
 namespace eng
@@ -35,7 +36,15 @@ VulkanDevice::VulkanDevice(const VulkanInstance& vulkanInstance, VkSurfaceKHR wi
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-    deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    if (queueFamilies_.graphicsFamilyIndex == queueFamilies_.presentationFamilyIndex) {
+        deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(
+            queueCreateInfos.size() - 1
+        );
+    } else {
+        deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(
+            queueCreateInfos.size()
+        );
+    }
     VkPhysicalDeviceFeatures deviceFeatures{}; // Off by now
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(g_requiredExtensions.size());
@@ -43,6 +52,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance& vulkanInstance, VkSurfaceKHR wi
 
     if (vkCreateDevice(physical_, &deviceCreateInfo, nullptr, &device_) != VK_SUCCESS) {
         // TODO error
+        exit(1);
     }
 
     vkGetDeviceQueue(device_, queueFamilies_.graphicsFamilyIndex, 0, &graphicsQueue_);
@@ -139,11 +149,12 @@ void VulkanDevice::SetQueueFamilyIndices(const VulkanInstance& vulkanInstance, V
     }
 
     if (!graphicsFamilyIndex.has_value()) {
-        //ExitError("No graphics family queue supported");
+        std::cerr << "No graphics family queue supported\n";
         // TODO error
     }
     if (!presentationFamilyIndex.has_value()) {
-        //ExitError("No presentation family queue supported");
+        std::cerr << "No presentation family queue supported\n";
+        exit(1);
         // TODO error
     }
 

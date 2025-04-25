@@ -9,6 +9,7 @@
 
 #include "render/transform/matrix.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <common/stb_image.h>
 
 namespace eng
