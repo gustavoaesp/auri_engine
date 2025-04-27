@@ -51,13 +51,17 @@ private:
 
     std::unique_ptr<RBuffer> ambient_uniform_;
 
-    void ProcessDirectionalLight(
+    std::vector<std::pair<RDescriptorSet*, RSceneLight*>> directional_light_cache_;
+
+    void BuildCaches(RScene&);
+
+    void CacheDirectionalLight(
         RSceneLight *light,
-        RDescriptorSet *buffers, RDescriptorSet *textures
+        RDescriptorSet *buffers
     );
-    void ProcessAmbientLight(
+    void CacheAmbientLight(
         const vec3f &color,
-        RDescriptorSet *buffers, RDescriptorSet *textures
+        RDescriptorSet *buffers
     );
 };
 
