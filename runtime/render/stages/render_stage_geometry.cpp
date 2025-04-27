@@ -154,7 +154,15 @@ RStageGeometry::~RStageGeometry()
 
 void RStageGeometry::Render(RScene &scene)
 {
+    std::array<vec4f, 3> clear_colors{
+        vec4f(0.0f, 0.0f, 0.0f, 1.0f),
+        vec4f(0.0f, 0.0f, 0.0f, 1.0f),
+        vec4f(1.0f, 0.0f, 0.0f, 1.0f)
+    };
+
     ResetCounters();
+    submesh_cache_.resize(0);
+    skinned_submesh_cache_.resize(0);
 
     if (scene.active_camera) {
         mtx4f view_proj = CreateViewMatrix(
@@ -172,11 +180,8 @@ void RStageGeometry::Render(RScene &scene)
         );
     }
 
-    std::array<vec4f, 3> clear_colors{
-        vec4f(0.0f, 0.0f, 0.0f, 1.0f),
-        vec4f(0.0f, 0.0f, 0.0f, 1.0f),
-        vec4f(1.0f, 0.0f, 0.0f, 1.0f)
-    };
+    BuildCacheMeshes(scene);
+    BuildCacheSkinnedMeshes(scene);
 
     cmd_buffer_->Reset();
     cmd_buffer_->BeginRecord();
@@ -186,6 +191,64 @@ void RStageGeometry::Render(RScene &scene)
         clear_colors.data(), clear_colors.size(),
         0x00, false
     );
+
+    for (const auto &submesh : submesh_cache_) {
+        cmd_buffer_->CmdBindPipeline(main_pipeline_.get());
+        cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+        cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
+        cmd_buffer_->CmdBindDescriptorSets(
+            main_pipeline_.get(),
+            (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
+                submesh.buffers,
+                submesh.textures
+            }.data(),
+            2
+        );
+        cmd_buffer_->CmdBindVertexBuffer(
+            submesh.elem->vertex_buffer.get(),
+            0, 0
+        );
+        cmd_buffer_->CmdBindIndexBuffer(
+            submesh.elem->index_buffer.get(),
+            0
+        );
+        cmd_buffer_->CmdDrawIndexed(
+            submesh.elem->indices_count,
+            0, 0
+        );
+    }
+
+    for (const auto &skinned_submesh : skinned_submesh_cache_) {
+        cmd_buffer_->CmdBindPipeline(main_skinned_pipeline_.get());
+        cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
+        cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
+        cmd_buffer_->CmdBindDescriptorSets(
+            main_pipeline_.get(),
+            (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
+                skinned_submesh.buffers,
+                skinned_submesh.textures
+            }.data(),
+            2
+        );
+        cmd_buffer_->CmdBindVertexBuffer(
+            skinned_submesh.elem->vertex_buffer.get(),
+            0, 0
+        );
+        cmd_buffer_->CmdBindIndexBuffer(
+            skinned_submesh.elem->index_buffer.get(), 0
+        );
+        cmd_buffer_->CmdDrawIndexed(
+            skinned_submesh.elem->indices.size(),
+            0, 0
+        );
+    }
+
+    cmd_buffer_->CmdEndRenderPass();
+    cmd_buffer_->EndRecord();
+}
+
+void RStageGeometry::BuildCacheMeshes(RScene &scene)
+{
     for (const auto& scene_mesh: scene.scene_meshes) {
         mtx4f transform = CreateScaleMatrix(
             scene_mesh->scale(0),
@@ -221,6 +284,7 @@ void RStageGeometry::Render(RScene &scene)
                 .size = sizeof(mtx4f)
             }
         };
+
         descriptor_set_buffers->BindBuffers(
             0, buffer_bindings.data(), buffer_bindings.size()
         );
@@ -235,32 +299,18 @@ void RStageGeometry::Render(RScene &scene)
             descriptor_set_textures->BindTextures(
                 0, &sampler_binding, 1
             );
-            cmd_buffer_->CmdBindPipeline(main_pipeline_.get());
-            cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
-            cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
-            cmd_buffer_->CmdBindDescriptorSets(
-                main_pipeline_.get(),
-                (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
-                    descriptor_set_buffers,
-                    descriptor_set_textures
-                }.data(),
-                2
-            );
-            cmd_buffer_->CmdBindVertexBuffer(
-                submesh->vertex_buffer.get(),
-                0, 0
-            );
-            cmd_buffer_->CmdBindIndexBuffer(
-                submesh->index_buffer.get(),
-                0
-            );
-            cmd_buffer_->CmdDrawIndexed(
-                submesh->indices_count,
-                0, 0
-            );
+
+            submesh_cache_.push_back(TSceneCacheElement<RSubmesh>{
+                .textures = descriptor_set_textures,
+                .buffers = descriptor_set_buffers,
+                .elem = submesh
+            });
         }
     }
+}
 
+void RStageGeometry::BuildCacheSkinnedMeshes(RScene& scene)
+{
     for (const auto &skinned_mesh : scene.scene_skinned_meshes) {
         mtx4f transform = CreateScaleMatrix(
             skinned_mesh->scale(0),
@@ -332,32 +382,14 @@ void RStageGeometry::Render(RScene &scene)
             descriptor_set_textures->BindTextures(
                 0, &sampler_binding, 1
             );
-            cmd_buffer_->CmdBindPipeline(main_skinned_pipeline_.get());
-            cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
-            cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
-            cmd_buffer_->CmdBindDescriptorSets(
-                main_pipeline_.get(),
-                (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
-                    descriptor_set_buffers,
-                    descriptor_set_textures
-                }.data(),
-                2
-            );
-            cmd_buffer_->CmdBindVertexBuffer(
-                submesh->vertex_buffer.get(),
-                0, 0
-            );
-            cmd_buffer_->CmdBindIndexBuffer(
-                submesh->index_buffer.get(), 0
-            );
-            cmd_buffer_->CmdDrawIndexed(
-                submesh->indices.size(),
-                0, 0
-            );
+
+            skinned_submesh_cache_.push_back(TSceneCacheElement<RSkinnedSubmesh>{
+                .textures = descriptor_set_textures,
+                .buffers = descriptor_set_buffers,
+                .elem = submesh
+            });
         }
     }
-    cmd_buffer_->CmdEndRenderPass();
-    cmd_buffer_->EndRecord();
 }
 
 void RStageGeometry::RenderSubmesh(RSubmesh *submesh)

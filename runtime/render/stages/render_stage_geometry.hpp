@@ -8,6 +8,7 @@ namespace eng
 {
 
 struct RSubmesh;
+struct RSkinnedSubmesh;
 
 class RStageGeometry : public IRenderStage
 {
@@ -30,6 +31,21 @@ private:
     std::unique_ptr<RSampler> main_sampler_;
 
     std::unique_ptr<RBuffer> view_projection_uniform_;
+
+    template <typename T>
+    struct TSceneCacheElement
+    {
+        RDescriptorSet *textures;
+        RDescriptorSet *buffers;
+        T *elem;
+    };
+
+    void BuildCacheMeshes(RScene&);
+    void BuildCacheSkinnedMeshes(RScene&);
+
+    std::vector<TSceneCacheElement<RSubmesh>> submesh_cache_;
+    std::vector<TSceneCacheElement<RSkinnedSubmesh>> skinned_submesh_cache_;
+
 };
 
 }
