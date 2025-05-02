@@ -21,7 +21,7 @@ class VulkanSampler;
 class VulkanShader;
 class VulkanFramebuffer;
 class VulkanRenderPass;
-class VulkanPipeline;
+class VulkanPipelineGraphics;
 class VulkanCommandPool;
 class VulkanCommandBuffer;
 class VulkanDescriptorSetLayout;
@@ -74,7 +74,7 @@ public:
         RTexture *depth_stencil
     ) override;
 
-    RPipeline *CreatePipeline(
+    RPipelineGraphics *CreateGraphicsPipeline(
         const RRenderPass *,
         const RBlendState *,
         const RDepthStencilState *depth_state,
@@ -122,7 +122,7 @@ private:
 
     std::vector<std::unique_ptr<VulkanFramebuffer>> presentation_framebuffers_;
     std::unique_ptr<VulkanRenderPass> presentation_render_pass_;
-    std::unique_ptr<VulkanPipeline> presentation_pipeline_;
+    std::unique_ptr<VulkanPipelineGraphics> presentation_pipeline_;
     std::unique_ptr<VulkanDescriptorSetLayout> presentation_descriptor_layout_;
     std::unique_ptr<VulkanDescriptorPool> presentation_descriptor_pool_;
     std::unique_ptr<VulkanDescriptorSet> presentation_descriptor_set_;

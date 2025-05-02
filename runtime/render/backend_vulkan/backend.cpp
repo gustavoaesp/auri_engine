@@ -2,7 +2,7 @@
 #include "backend_vulkan/primitives/vk_buffer.hpp"
 #include "backend_vulkan/primitives/vk_cmd_pool.hpp"
 #include "backend_vulkan/primitives/vk_framebuffer.hpp"
-#include "backend_vulkan/primitives/vk_pipeline.hpp"
+#include "backend_vulkan/primitives/vk_pipeline_graphics.hpp"
 #include "backend_vulkan/primitives/vk_render_pass.hpp"
 #include "backend_vulkan/primitives/vk_sampler.hpp"
 #include "backend_vulkan/primitives/vk_shader.hpp"
@@ -99,8 +99,8 @@ VulkanRenderBackend::VulkanRenderBackend(
         presentation_shader_vert_.get(),
         presentation_shader_frag_.get()
     };
-    presentation_pipeline_ = std::unique_ptr<VulkanPipeline>(
-        (VulkanPipeline*)CreatePipeline(
+    presentation_pipeline_ = std::unique_ptr<VulkanPipelineGraphics>(
+        (VulkanPipelineGraphics*)CreateGraphicsPipeline(
             presentation_render_pass_.get(),
             &presentation_blend,
             nullptr,
@@ -295,7 +295,7 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
         presentation_framebuffers_[image_index_].get(),
         &clearColor, 1, 0x00, false
     );
-    presentation_cmd_buffer_->CmdBindPipeline(presentation_pipeline_.get());
+    presentation_cmd_buffer_->CmdBindGraphicsPipeline(presentation_pipeline_.get());
     presentation_cmd_buffer_->CmdSetScissor(
         0, 0,
         presentation_framebuffers_[image_index_]->GetWidth(),
@@ -307,7 +307,7 @@ void VulkanRenderBackend::Present(RFramebuffer *final_image)
         presentation_framebuffers_[image_index_]->GetHeight()
     );
     presentation_cmd_buffer_->CmdBindVertexBuffer(presentation_square_.get(), 0, 0);
-    presentation_cmd_buffer_->CmdBindDescriptorSets(
+    presentation_cmd_buffer_->CmdBindDescriptorSetsGraphics(
         presentation_pipeline_.get(),
         (const RDescriptorSet**)descriptor_sets_array.data(),
         1
@@ -466,7 +466,7 @@ RFramebuffer *VulkanRenderBackend::CreateFramebuffer(
     );
 }
 
-RPipeline *VulkanRenderBackend::CreatePipeline(
+RPipelineGraphics *VulkanRenderBackend::CreateGraphicsPipeline(
     const RRenderPass *render_pass,
     const RBlendState *blend_state,
     const RDepthStencilState *depth_state,
@@ -476,7 +476,7 @@ RPipeline *VulkanRenderBackend::CreatePipeline(
 {
     VulkanVertexDescription vertex_description = VulkanBuildDescriptors(vertex_type, instance_type);
 
-    return new VulkanPipeline(
+    return new VulkanPipelineGraphics(
         vulkan_device_->get(),
         static_cast<const VulkanRenderPass*>(render_pass),
         blend_state,

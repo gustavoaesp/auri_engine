@@ -12,7 +12,7 @@ if (BUILD_VULKAN)
         render/backend_vulkan/primitives/vk_cmd_pool.cpp
         render/backend_vulkan/primitives/vk_descriptors.cpp
         render/backend_vulkan/primitives/vk_framebuffer.cpp
-        render/backend_vulkan/primitives/vk_pipeline.cpp
+        render/backend_vulkan/primitives/vk_pipeline_graphics.cpp
         render/backend_vulkan/primitives/vk_render_pass.cpp
         render/backend_vulkan/primitives/vk_sampler.cpp
         render/backend_vulkan/primitives/vk_shader.cpp

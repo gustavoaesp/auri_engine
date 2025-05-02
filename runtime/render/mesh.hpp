@@ -6,7 +6,7 @@
 
 #include "primitives/buffer.hpp"
 #include "primitives/texture.hpp"
-#include "primitives/pipeline.hpp"
+#include "primitives/pipeline_graphics.hpp"
 #include "renderbackend.hpp"
 
 namespace eng
@@ -16,7 +16,7 @@ struct RMaterial
 {
     std::shared_ptr<RTexture> diffuse;
     std::string diffuse_filename;
-    std::shared_ptr<RPipeline> pipeline; //can be null
+    std::shared_ptr<RPipelineGraphics> pipeline; //can be null
 };
 
 struct RSubmesh

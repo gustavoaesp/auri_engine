@@ -8,7 +8,7 @@
 #include "primitives/cmd_buffer.hpp"
 #include "primitives/descriptors.hpp"
 #include "primitives/framebuffer.hpp"
-#include "primitives/pipeline.hpp"
+#include "primitives/pipeline_graphics.hpp"
 #include "primitives/render_pass.hpp"
 #include "primitives/sampler.hpp"
 #include "primitives/shader.hpp"
@@ -82,7 +82,7 @@ public:
         RTexture* depth_stencil
     ) = 0;
 
-    virtual RPipeline *CreatePipeline(
+    virtual RPipelineGraphics *CreateGraphicsPipeline(
         const RRenderPass *,
         const RBlendState *,
         const RDepthStencilState *depth_state,

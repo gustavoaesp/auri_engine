@@ -1,6 +1,6 @@
 #ifndef _BACKEND_VULKAN_VTX_INPUT_DESC_HPP_
 #define _BACKEND_VULKAN_VTX_INPUT_DESC_HPP_
-#include "backend_vulkan/primitives/vk_pipeline.hpp"
+#include "backend_vulkan/primitives/vk_pipeline_graphics.hpp"
 
 #include <vector>
 

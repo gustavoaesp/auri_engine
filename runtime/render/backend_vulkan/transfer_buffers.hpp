@@ -24,6 +24,10 @@ public:
         bool mips
     );
 
+    const VulkanCommandBuffer *GetCommandBuffer() const {
+        return cmd_buffer_.get();
+    }
+
 private:
     std::unique_ptr<VulkanCommandPool> cmd_pool_;
     std::unique_ptr<VulkanCommandBuffer> cmd_buffer_;

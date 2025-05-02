@@ -1,7 +1,7 @@
 #ifndef _RENDER_BACKEND_VULKAN_PIPELINE_HPP_
 #define _RENDER_BACKEND_VULKAN_PIPELINE_HPP_
 
-#include "primitives/pipeline.hpp"
+#include "primitives/pipeline_graphics.hpp"
 #include "backend_vulkan/primitives/vk_render_pass.hpp"
 #include "backend_vulkan/primitives/vk_shader.hpp"
 #include "backend_vulkan/primitives/vk_descriptors.hpp"
@@ -19,9 +19,9 @@ struct VulkanVertexDescription
     int vertex_attribute_count;
 };
 
-struct VulkanPipeline : public RPipeline
+struct VulkanPipelineGraphics : public RPipelineGraphics
 {
-    VulkanPipeline(
+    VulkanPipelineGraphics(
         VkDevice vk_device,
         const VulkanRenderPass *render_pass,
         const RBlendState *blend_state,
@@ -32,7 +32,7 @@ struct VulkanPipeline : public RPipeline
         const VulkanDescriptorSetLayout**,
         int num_descriptor_set_layouts
     );
-    ~VulkanPipeline() override;
+    ~VulkanPipelineGraphics() override;
 
     VkDevice vk_device_ref;
     VkPipelineLayout vk_pipeline_layout;

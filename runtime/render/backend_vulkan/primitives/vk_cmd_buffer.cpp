@@ -1,6 +1,6 @@
 #include "backend_vulkan/primitives/vk_buffer.hpp"
 #include "backend_vulkan/primitives/vk_cmd_buffer.hpp"
-#include "backend_vulkan/primitives/vk_pipeline.hpp"
+#include "backend_vulkan/primitives/vk_pipeline_graphics.hpp"
 #include "backend_vulkan/primitives/vk_render_pass.hpp"
 #include "backend_vulkan/primitives/vk_framebuffer.hpp"
 #include "vk_cmd_buffer.hpp"
@@ -82,9 +82,9 @@ void VulkanCommandBuffer::CmdEndRenderPass()
     vkCmdEndRenderPass(vk_command_buffer);
 }
 
-void VulkanCommandBuffer::CmdBindPipeline(const RPipeline *pipeline)
+void VulkanCommandBuffer::CmdBindGraphicsPipeline(const RPipelineGraphics *pipeline)
 {
-    const VulkanPipeline *vk_pipeline = static_cast<const VulkanPipeline*>(pipeline);
+    const VulkanPipelineGraphics *vk_pipeline = static_cast<const VulkanPipelineGraphics*>(pipeline);
     vkCmdBindPipeline(
         vk_command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -122,13 +122,13 @@ void VulkanCommandBuffer::CmdBindIndexBuffer(const RBuffer *index_buffer, uint32
     );
 }
 
-void VulkanCommandBuffer::CmdBindDescriptorSets(
-    const RPipeline* pipeline,
+void VulkanCommandBuffer::CmdBindDescriptorSetsGraphics(
+    const RPipelineGraphics* pipeline,
     const RDescriptorSet **sets,
     uint32_t count)
 {
     std::array<VkDescriptorSet, 8> vk_sets{};
-    const VulkanPipeline *vk_pipeline = static_cast<const VulkanPipeline*>(pipeline);
+    const VulkanPipelineGraphics *vk_pipeline = static_cast<const VulkanPipelineGraphics*>(pipeline);
 
     for (int i = 0; i < count; i++) {
         const VulkanDescriptorSet *vk_set = static_cast<const VulkanDescriptorSet*>(sets[i]);

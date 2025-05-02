@@ -30,7 +30,7 @@ struct VulkanCommandBuffer : public RCommandBuffer
 
     virtual void CmdEndRenderPass() override;
 
-    virtual void CmdBindPipeline(const RPipeline*) override;
+    virtual void CmdBindGraphicsPipeline(const RPipelineGraphics*) override;
 
     virtual void CmdBindVertexBuffer(
         const RBuffer*,
@@ -43,8 +43,8 @@ struct VulkanCommandBuffer : public RCommandBuffer
         uint32_t offset_bytes
     ) override;
 
-    virtual void CmdBindDescriptorSets(
-        const RPipeline*,
+    virtual void CmdBindDescriptorSetsGraphics(
+        const RPipelineGraphics*,
         const RDescriptorSet**,
         uint32_t count
     ) override;

@@ -37,11 +37,11 @@ private:
     IRenderBackend *backend_ref_;
     RFramebuffer *gbuffer_ref_;
 
-    std::unique_ptr<RPipeline> ambient_pipeline_;
+    std::unique_ptr<RPipelineGraphics> ambient_pipeline_;
 
     std::unique_ptr<RShader> directional_vertex_shader_;
     std::unique_ptr<RShader> directional_pixel_shader_;
-    std::unique_ptr<RPipeline> directional_pipeline_;
+    std::unique_ptr<RPipelineGraphics> directional_pipeline_;
 
     std::unique_ptr<RFramebuffer> output_frame_;
 

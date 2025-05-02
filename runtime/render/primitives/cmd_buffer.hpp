@@ -9,7 +9,7 @@ namespace eng
 
 class RBuffer;
 class RFramebuffer;
-class RPipeline;
+class RPipelineGraphics;
 class RRenderPass;
 class RDescriptorSet;
 
@@ -34,7 +34,7 @@ public:
 
     virtual void CmdEndRenderPass() = 0;
 
-    virtual void CmdBindPipeline(const RPipeline*) = 0;
+    virtual void CmdBindGraphicsPipeline(const RPipelineGraphics*) = 0;
 
     virtual void CmdBindVertexBuffer(
         const RBuffer*,
@@ -47,8 +47,8 @@ public:
         uint32_t offset_bytes
     ) = 0;
 
-    virtual void CmdBindDescriptorSets(
-        const RPipeline*,
+    virtual void CmdBindDescriptorSetsGraphics(
+        const RPipelineGraphics*,
         const RDescriptorSet**,
         uint32_t count
     ) = 0;

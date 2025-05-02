@@ -1,4 +1,4 @@
-#include "backend_vulkan/primitives/vk_pipeline.hpp"
+#include "backend_vulkan/primitives/vk_pipeline_graphics.hpp"
 
 namespace eng
 {
@@ -49,7 +49,7 @@ VkBlendOp _VulkanConvertBlendOp(RBlendOp blend_op)
     return VK_BLEND_OP_ADD;
 }
 
-VulkanPipeline::VulkanPipeline(
+VulkanPipelineGraphics::VulkanPipelineGraphics(
     VkDevice vk_device,
     const VulkanRenderPass *render_pass, const RBlendState *blend_state,
     const RDepthStencilState *depth_state,
@@ -282,7 +282,7 @@ VulkanPipeline::VulkanPipeline(
     }
 }
 
-VulkanPipeline::~VulkanPipeline()
+VulkanPipelineGraphics::~VulkanPipelineGraphics()
 {
     if (vk_pipeline) {
         vkDestroyPipeline(vk_device_ref, vk_pipeline, nullptr);

@@ -60,13 +60,13 @@ struct RBlendState
     int num_blend_attachments;
 };
 
-class RPipeline
+class RPipelineGraphics
 {
 public:
-    virtual ~RPipeline() {}
+    virtual ~RPipelineGraphics() {}
 
 protected:
-    RPipeline() {}
+    RPipelineGraphics() {}
 };
 
 }

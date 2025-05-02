@@ -83,8 +83,8 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
     directional_pixel_shader_ = std::unique_ptr<RShader>(
         backend->CreateShader("shaders/dirlight.frag.spv", RShaderPipelineBind::kShaderFragment)
     );
-    directional_pipeline_ = std::unique_ptr<RPipeline>(
-        backend->CreatePipeline(
+    directional_pipeline_ = std::unique_ptr<RPipelineGraphics>(
+        backend->CreateGraphicsPipeline(
             render_pass_.get(),
             &blend_state, nullptr,
             (const RShader**)std::array<RShader *, 2>{
@@ -100,8 +100,8 @@ RStageLighting::RStageLighting(IRenderBackend *backend, RFramebuffer *gbuffer):
         )
     );
 
-    ambient_pipeline_ = std::unique_ptr<RPipeline>(
-        backend->CreatePipeline(
+    ambient_pipeline_ = std::unique_ptr<RPipelineGraphics>(
+        backend->CreateGraphicsPipeline(
             render_pass_.get(),
             &blend_state, nullptr,
             (const RShader**)std::array<RShader*, 2>{
@@ -185,8 +185,8 @@ void RStageLighting::Render(RScene &scene)
     );
 
     /* ambient light */
-    cmd_buffer_->CmdBindPipeline(ambient_pipeline_.get());
-    cmd_buffer_->CmdBindDescriptorSets(
+    cmd_buffer_->CmdBindGraphicsPipeline(ambient_pipeline_.get());
+    cmd_buffer_->CmdBindDescriptorSetsGraphics(
         ambient_pipeline_.get(),
         (const RDescriptorSet**)std::array<RDescriptorSet*, 2>{
             descriptor_set_buffers_ambient,
@@ -202,8 +202,8 @@ void RStageLighting::Render(RScene &scene)
 
     /* directional lights */
     for (const auto &[set, light] : directional_light_cache_) {
-        cmd_buffer_->CmdBindPipeline(directional_pipeline_.get());
-        cmd_buffer_->CmdBindDescriptorSets(
+        cmd_buffer_->CmdBindGraphicsPipeline(directional_pipeline_.get());
+        cmd_buffer_->CmdBindDescriptorSetsGraphics(
             directional_pipeline_.get(),
             (const RDescriptorSet**)std::array<RDescriptorSet*, 2>{
                 set, descriptor_set_textures

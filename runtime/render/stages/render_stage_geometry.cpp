@@ -95,8 +95,8 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
     depth_state.depth_write_enable = true;
     depth_state.max_depth = 1.0f;
 
-    main_pipeline_ = std::unique_ptr<RPipeline>(
-        backend_ref->CreatePipeline(
+    main_pipeline_ = std::unique_ptr<RPipelineGraphics>(
+        backend_ref->CreateGraphicsPipeline(
             render_pass_.get(),
             &blend_state,
             &depth_state,
@@ -114,8 +114,8 @@ RStageGeometry::RStageGeometry(IRenderBackend* backend_ref, uint32_t width, uint
             2
         )
     );
-    main_skinned_pipeline_ = std::unique_ptr<RPipeline>(
-        backend_ref->CreatePipeline(
+    main_skinned_pipeline_ = std::unique_ptr<RPipelineGraphics>(
+        backend_ref->CreateGraphicsPipeline(
             render_pass_.get(),
             &blend_state,
             &depth_state,
@@ -193,10 +193,10 @@ void RStageGeometry::Render(RScene &scene)
     );
 
     for (const auto &submesh : submesh_cache_) {
-        cmd_buffer_->CmdBindPipeline(main_pipeline_.get());
+        cmd_buffer_->CmdBindGraphicsPipeline(main_pipeline_.get());
         cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
         cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
-        cmd_buffer_->CmdBindDescriptorSets(
+        cmd_buffer_->CmdBindDescriptorSetsGraphics(
             main_pipeline_.get(),
             (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
                 submesh.buffers,
@@ -219,10 +219,10 @@ void RStageGeometry::Render(RScene &scene)
     }
 
     for (const auto &skinned_submesh : skinned_submesh_cache_) {
-        cmd_buffer_->CmdBindPipeline(main_skinned_pipeline_.get());
+        cmd_buffer_->CmdBindGraphicsPipeline(main_skinned_pipeline_.get());
         cmd_buffer_->CmdSetScissor(0, 0, g_context->frame_width, g_context->frame_height);
         cmd_buffer_->CmdSetViewport(0, 0, g_context->frame_width, g_context->frame_height);
-        cmd_buffer_->CmdBindDescriptorSets(
+        cmd_buffer_->CmdBindDescriptorSetsGraphics(
             main_pipeline_.get(),
             (const RDescriptorSet**)std::array<RDescriptorSet*, 2> {
                 skinned_submesh.buffers,
